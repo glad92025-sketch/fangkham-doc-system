@@ -13,6 +13,22 @@ const CONFIG_FILE = path.join(DATA_DIR, 'drive-config.json');
 const USERS_FILE = path.join(DATA_DIR, 'users-db.json');
 const DOCS_FILE = path.join(DATA_DIR, 'documents-db.json');
 
+// โลโก้ทางการ อบต.ฝางคำ
+const PUBLIC_DIR = path.join(__dirname, 'public');
+if (!fs.existsSync(PUBLIC_DIR)) {
+    fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+}
+const LOGO_FILE = path.join(PUBLIC_DIR, 'logo.png');
+let LOGO_DATA_URI = '/logo.png';
+if (fs.existsSync(LOGO_FILE)) {
+    try {
+        const logoBuffer = fs.readFileSync(LOGO_FILE);
+        LOGO_DATA_URI = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    } catch (e) {
+        console.error('Error reading logo file:', e);
+    }
+}
+
 // 1. ค่าเริ่มต้น Google Drive (คลังกลาง อบต.ฝางคำ)
 let driveConfig = {
     targetEmail: "akaradran2568@gmail.com",
@@ -207,6 +223,7 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>ระบบคลังเอกสารและผลการปฏิบัติงาน - อบต.ฝางคำ</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="icon" type="image/png" href="${LOGO_DATA_URI}">
         <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
             body { font-family: 'Sarabun', sans-serif; }
@@ -223,9 +240,7 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
                     <!-- โลโก้และชื่อหน่วยงาน -->
                     <div class="flex items-center shrink-0">
                         <a href="/" class="flex items-center space-x-2.5 group">
-                            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-500 text-blue-950 font-black rounded-xl flex items-center justify-center text-lg shadow-md border-2 border-yellow-300 group-hover:scale-105 transition transform shrink-0">
-                                ฝค
-                            </div>
+                            <img src="${LOGO_DATA_URI}" alt="ตราสัญลักษณ์ อบต.ฝางคำ" class="w-11 h-11 object-contain drop-shadow group-hover:scale-105 transition transform shrink-0">
                             <div class="flex flex-col">
                                 <div class="flex items-center space-x-1.5">
                                     <span class="text-base font-bold font-prompt text-white group-hover:text-yellow-300 transition whitespace-nowrap">
@@ -530,6 +545,17 @@ const server = http.createServer(async (req, res) => {
 
     const authUsername = getCookie(req, 'auth_user');
     const currentUser = staffDatabase.find(u => u.username === authUsername);
+
+    // 0. Static Asset: Logo & Favicon
+    if (url.pathname === '/logo.png' || url.pathname === '/favicon.ico') {
+        if (fs.existsSync(LOGO_FILE)) {
+            res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Cache-Control': 'public, max-age=86400'
+            });
+            return res.end(fs.readFileSync(LOGO_FILE));
+        }
+    }
 
     // 1. หน้า Login
     if (url.pathname === '/login') {
@@ -2337,8 +2363,8 @@ function renderEvaluationPage(currentUser) {
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-6 sm:p-8 print-card">
             
             <div class="text-center pb-6 border-b border-slate-200">
-                <div class="w-20 h-20 bg-gradient-to-br from-yellow-400 to-amber-500 text-blue-950 font-black rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-md border-2 border-yellow-300 mb-3">
-                    ฝค
+                <div class="mb-3">
+                    <img src="${LOGO_DATA_URI}" alt="ตราสัญลักษณ์ องค์การบริหารส่วนตำบลฝางคำ" class="w-24 h-24 object-contain mx-auto drop-shadow">
                 </div>
                 <h1 class="text-xl sm:text-2xl font-bold font-prompt text-slate-900">
                     ข้อมูลประกอบการพิจารณาผลการดำเนินงานจริง
@@ -3305,6 +3331,7 @@ function renderLoginPage(hasError) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>เข้าสู่ระบบ - องค์การบริหารส่วนตำบลฝางคำ</title>
+        <link rel="icon" type="image/png" href="${LOGO_DATA_URI}">
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
@@ -3317,8 +3344,8 @@ function renderLoginPage(hasError) {
         <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 w-full max-w-md">
             
             <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-amber-500 text-blue-950 font-extrabold rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-lg mb-3 border-2 border-yellow-300">
-                    ฝค
+                <div class="mb-4">
+                    <img src="${LOGO_DATA_URI}" alt="ตราสัญลักษณ์ องค์การบริหารส่วนตำบลฝางคำ" class="w-28 h-28 object-contain mx-auto drop-shadow-md hover:scale-105 transition transform">
                 </div>
                 <h1 class="text-xl font-bold font-prompt text-slate-900 leading-tight">องค์การบริหารส่วนตำบลฝางคำ</h1>
                 <p class="text-xs text-blue-900 font-semibold mt-1">ระบบคลังเอกสารราชการและผลงานประจำตำแหน่ง</p>
