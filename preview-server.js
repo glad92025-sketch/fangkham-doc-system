@@ -256,10 +256,6 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
                             <span>📖</span>
                             <span>คู่มือระบบ (Doc)</span>
                         </a>
-                        <a href="/evaluation" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center space-x-1.5 shrink-0 ${activeTab === 'evaluation' ? 'bg-amber-400 text-blue-950 shadow-md ring-2 ring-yellow-300' : 'bg-yellow-400/15 text-yellow-300 hover:bg-yellow-400/25 border border-yellow-400/30'}">
-                            <span>🏆</span>
-                            <span>ตรวจประเมิน (๒ คะแนน)</span>
-                        </a>
                         ${isAdmin ? `
                         <a href="/admin/users" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center space-x-1.5 shrink-0 ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-white/10 hover:text-white'}">
                             <span>👥</span>
@@ -343,7 +339,6 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
                     <a href="/documents" class="${activeTab === 'documents' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">📂 คลังเอกสาร</a>
                     <a href="/km" class="${activeTab === 'km' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">💡 KM</a>
                     <a href="/docs" class="${activeTab === 'docs' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">📖 คู่มือ Doc</a>
-                    <a href="/evaluation" class="${activeTab === 'evaluation' ? 'text-amber-400 font-bold bg-white/10' : 'text-yellow-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">🏆 ตรวจประเมิน</a>
                     ${isAdmin ? `<a href="/admin/users" class="${activeTab === 'users' ? 'text-blue-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">👥 จัดการ จนท.</a>` : ''}
                     <a href="/profile" class="${activeTab === 'profile' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">👤 โปรไฟล์</a>
                 </div>
