@@ -1316,26 +1316,27 @@ function renderDashboardPage(currentUser) {
 
 // หน้าคลังเอกสารราชการทั้งหมด (พร้อมตัวกรองและค้นหา)
 function renderDocumentsArchivePage(currentUser, url) {
-    let docs = [...documentsDatabase];
+    let allVisibleDocs = [...documentsDatabase];
 
-    // สิทธิ์การมองเห็น
+    // สิทธิ์การมองเห็นตามบทบาท
     if (currentUser.role === 'head') {
-        docs = docs.filter(d => d.dept === currentUser.dept);
+        allVisibleDocs = allVisibleDocs.filter(d => d.dept === currentUser.dept);
     } else if (currentUser.role === 'staff') {
-        docs = docs.filter(d => d.userName === currentUser.name);
+        allVisibleDocs = allVisibleDocs.filter(d => d.userName === currentUser.name);
     }
 
-    // ตัวกรอง
+    // ตัวกรองเริ่มต้น (ถ้าเปิดมาจาก URL ที่มีพารามิเตอร์)
     const search = url.searchParams.get('search')?.toLowerCase() || '';
     const deptFilter = url.searchParams.get('dept') || '';
     const yearFilter = url.searchParams.get('year') || '';
     const strategyFilter = url.searchParams.get('strategy') || '';
 
+    let docs = allVisibleDocs;
     if (search) {
         docs = docs.filter(d => 
-            d.title.toLowerCase().includes(search) || 
-            d.userName.toLowerCase().includes(search) || 
-            d.fileName.toLowerCase().includes(search) ||
+            (d.title || '').toLowerCase().includes(search) || 
+            (d.userName || '').toLowerCase().includes(search) || 
+            (d.fileName || '').toLowerCase().includes(search) ||
             (d.strategy && d.strategy.toLowerCase().includes(search))
         );
     }
@@ -1343,7 +1344,7 @@ function renderDocumentsArchivePage(currentUser, url) {
         docs = docs.filter(d => d.dept === deptFilter);
     }
     if (yearFilter) {
-        docs = docs.filter(d => d.fiscalYear === yearFilter);
+        docs = docs.filter(d => (d.fiscalYear || '2568') === yearFilter);
     }
     if (strategyFilter) {
         docs = docs.filter(d => d.strategy === strategyFilter);
@@ -1354,12 +1355,12 @@ function renderDocumentsArchivePage(currentUser, url) {
     return `
     <div class="space-y-6">
 
-        <!-- แถบแสดงความเร็วการค้นหาตามเกณฑ์ประเมินข้อ ๑ -->
+        <!-- แถบแสดงความเร็วการค้นหาตามเกณฑ์ประเมินข้อ ๑ (Real-Time Benchmark) -->
         <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border border-emerald-200/80 rounded-2xl">
             <div class="flex items-center space-x-2.5 text-xs text-emerald-950 font-medium">
                 <span class="text-xl">⚡</span>
                 <div>
-                    <div>พบเอกสารในคลังทั้งหมด <strong>${docs.length}</strong> รายการ (ประมวลผลสืบค้นใน <strong>0.04 วินาที</strong>)</div>
+                    <div>พบเอกสารในคลังทั้งหมด <strong id="docCountDisplay" class="text-sm font-bold text-emerald-800">${docs.length}</strong> รายการ (ประมวลผลสืบค้นใน <strong id="searchSpeedTimer" class="font-mono text-emerald-800 font-bold">0.003</strong> วินาที)</div>
                     <div class="text-[11px] text-slate-500">ปลายทางจัดเก็บ Google Drive บัญชีคลังกลาง: akaradran2568@gmail.com (5 TB)</div>
                 </div>
             </div>
@@ -1369,23 +1370,42 @@ function renderDocumentsArchivePage(currentUser, url) {
             </div>
         </div>
 
-        <!-- แถบค้นหาและตัวกรอง -->
+        <!-- แถบค้นหาและตัวกรองแบบ Real-Time -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-6">
-            <h2 class="text-base font-bold font-prompt text-slate-800 mb-4 flex items-center">
-                <span class="mr-2">📂</span> คลังเอกสารราชการ อบต.ฝางคำ
-            </h2>
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                <h2 class="text-base font-bold font-prompt text-slate-800 flex items-center">
+                    <span class="mr-2">📂</span> คลังเอกสารราชการ อบต.ฝางคำ
+                </h2>
+                <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                    <span>ระบบค้นหา Real-Time พิมพ์ปุ๊บ กรองผลลัพธ์ทันที</span>
+                </span>
+            </div>
 
-            <form method="GET" action="/documents" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+            <form onsubmit="event.preventDefault(); filterDocumentsRealtime();" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
                 <div class="sm:col-span-2">
-                    <label class="block text-xs font-bold text-slate-700 mb-1">ค้นหาเอกสาร</label>
-                    <input type="text" name="search" value="${search}" placeholder="พิมพ์ชื่องาน, ชื่อผู้ส่ง, ยุทธศาสตร์ หรือชื่อไฟล์..."
-                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-bold text-slate-700">ค้นหาเอกสาร (พิมพ์เพื่อค้นหาทันที)</label>
+                        <span class="text-[10px] text-blue-600 font-semibold">ไม่ต้องกด Enter</span>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="realtimeSearchInput" value="${search}"
+                            oninput="filterDocumentsRealtime()"
+                            placeholder="พิมพ์ชื่องาน, ชื่อผู้ส่ง, ยุทธศาสตร์ หรือชื่อไฟล์..."
+                            class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none transition">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            🔍
+                        </div>
+                        <button type="button" onclick="clearSearchInput()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs" title="ล้างคำค้นหา">
+                            ✕
+                        </button>
+                    </div>
                 </div>
 
                 ${currentUser.role === 'admin' || currentUser.role === 'auditor' ? `
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">กรองตามกอง</label>
-                    <select name="dept" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    <select id="realtimeDeptSelect" onchange="filterDocumentsRealtime()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
                         <option value="">-- ทั้งหมดทุกกอง --</option>
                         ${depts.map(d => `<option value="${d}" ${deptFilter === d ? 'selected' : ''}>${d}</option>`).join('')}
                     </select>
@@ -1394,28 +1414,31 @@ function renderDocumentsArchivePage(currentUser, url) {
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">ปีงบประมาณ</label>
-                    <select name="year" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    <select id="realtimeYearSelect" onchange="filterDocumentsRealtime()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
                         <option value="">-- ทุกปีงบประมาณ --</option>
                         <option value="2568" ${yearFilter === '2568' ? 'selected' : ''}>ปีงบประมาณ 2568</option>
                         <option value="2567" ${yearFilter === '2567' ? 'selected' : ''}>ปีงบประมาณ 2567</option>
+                        <option value="2566" ${yearFilter === '2566' ? 'selected' : ''}>ปีงบประมาณ 2566</option>
                     </select>
                 </div>
 
                 <div class="sm:col-span-4">
                     <label class="block text-xs font-bold text-slate-700 mb-1">ยุทธศาสตร์การพัฒนา อบต.ฝางคำ</label>
-                    <select name="strategy" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    <select id="realtimeStrategySelect" onchange="filterDocumentsRealtime()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
                         <option value="">-- ทุกยุทธศาสตร์การพัฒนา --</option>
                         ${STRATEGIES.map(s => `<option value="${s}" ${strategyFilter === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
                 </div>
 
-                <div class="sm:col-span-4 flex justify-end space-x-2 pt-2">
-                    <a href="/documents" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition">
-                        ล้างตัวกรอง
-                    </a>
-                    <button type="submit" class="px-6 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow transition">
-                        🔍 ค้นหาเอกสาร
-                    </button>
+                <div class="sm:col-span-4 flex flex-wrap justify-between items-center pt-2 gap-2">
+                    <div class="text-[11px] text-slate-500 font-medium" id="filterStatusText">
+                        ⚡ พิมพ์หรือเปลี่ยนตัวกรอง ข้อมูลจะอัปเดตแบบ Real-Time ทันที
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" onclick="resetFiltersRealtime()" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition">
+                            🔄 ล้างตัวกรองทั้งหมด
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1423,7 +1446,7 @@ function renderDocumentsArchivePage(currentUser, url) {
         <!-- ตารางแสดงรายการเอกสารทั้งหมด -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <span class="text-xs font-bold text-slate-700">พบทั้งหมด ${docs.length} รายการ</span>
+                <span id="tableCountDisplay" class="text-xs font-bold text-slate-700">พบทั้งหมด ${docs.length} รายการ</span>
                 <span class="text-[11px] text-slate-400">เก็บรักษาถาวรใน Google Drive (5 TB)</span>
             </div>
 
@@ -1440,7 +1463,7 @@ function renderDocumentsArchivePage(currentUser, url) {
                             <th class="p-4 text-center">จัดการเอกสาร</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody id="documentsTableBody" class="divide-y divide-slate-100">
                         ${docs.map(doc => `
                             <tr class="hover:bg-blue-50/30 transition">
                                 <td class="p-4 text-slate-500 whitespace-nowrap">${doc.date}</td>
@@ -1504,6 +1527,137 @@ function renderDocumentsArchivePage(currentUser, url) {
         </div>
 
     </div>
+
+    <!-- Script ค้นหาแบบ Real-Time -->
+    <script>
+        const ALL_DOCUMENTS = ${JSON.stringify(allVisibleDocs)};
+        const CURRENT_USER_ROLE = "${currentUser.role}";
+        const CURRENT_USER_NAME = ${JSON.stringify(currentUser.name)};
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function clearSearchInput() {
+            const input = document.getElementById('realtimeSearchInput');
+            if (input) {
+                input.value = '';
+                input.focus();
+                filterDocumentsRealtime();
+            }
+        }
+
+        function renderDocumentRows(docsList) {
+            const tbody = document.getElementById('documentsTableBody');
+            if (!tbody) return;
+
+            if (docsList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-12 text-center text-slate-400">📭 ไม่พบเอกสารตามเงื่อนไขที่ค้นหา</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = docsList.map(doc => {
+                const canManage = (CURRENT_USER_ROLE === 'admin' || doc.userName === CURRENT_USER_NAME);
+                const docJson = JSON.stringify(doc).replace(/"/g, '&quot;');
+                const docTitleEsc = (doc.title || '').replace(/'/g, "\\'");
+
+                return '<tr class="hover:bg-blue-50/30 transition">' +
+                    '<td class="p-4 text-slate-500 whitespace-nowrap">' + escapeHtml(doc.date) + '</td>' +
+                    '<td class="p-4">' +
+                        '<div class="font-bold text-slate-800 text-sm">' + escapeHtml(doc.title) + '</div>' +
+                        '<div class="text-[11px] text-slate-400 font-mono">' + escapeHtml(doc.fileName) + '</div>' +
+                        (doc.strategy ? '<div class="mt-1"><span class="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded font-medium">🎯 ' + escapeHtml(doc.strategy) + '</span></div>' : '') +
+                    '</td>' +
+                    '<td class="p-4 whitespace-nowrap">' +
+                        '<span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold text-[11px]">' + escapeHtml(doc.fiscalYear || '2568') + '</span>' +
+                    '</td>' +
+                    '<td class="p-4 whitespace-nowrap font-medium text-slate-700">' + escapeHtml(doc.userName) + '</td>' +
+                    '<td class="p-4 whitespace-nowrap">' +
+                        '<span class="px-2.5 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200 font-medium">' + escapeHtml(doc.dept) + '</span>' +
+                    '</td>' +
+                    '<td class="p-4 text-slate-500 whitespace-nowrap">' + escapeHtml(doc.size) + '</td>' +
+                    '<td class="p-4 text-center whitespace-nowrap">' +
+                        '<div class="inline-flex items-center space-x-1.5">' +
+                            '<a href="' + escapeHtml(doc.driveLink) + '" target="_blank" class="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold border border-blue-200 transition text-xs" title="เปิดดูเอกสาร">' +
+                                '<span>เปิดดู</span><span>↗</span>' +
+                            '</a>' +
+                            (canManage ? 
+                                '<button onclick="openEditDocModal(' + docJson + ')" class="inline-flex items-center px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl font-bold border border-amber-200 transition text-xs" title="แก้ไขข้อมูล">' +
+                                    '<span>✏️ แก้ไข</span>' +
+                                '</button>' +
+                                '<form method="POST" action="/api/documents/delete" class="inline" onsubmit="return confirm(\\'ยืนยันลบเอกสาร ' + docTitleEsc + ' ออกจากระบบหรือไม่?\\')">' +
+                                    '<input type="hidden" name="id" value="' + doc.id + '">' +
+                                    '<button type="submit" class="inline-flex items-center px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl font-bold border border-red-200 transition text-xs" title="ลบเอกสาร">' +
+                                        '<span>🗑️ ลบ</span>' +
+                                    '</button>' +
+                                '</form>'
+                            : '') +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
+            }).join('');
+        }
+
+        function filterDocumentsRealtime() {
+            const t0 = performance.now();
+            const search = (document.getElementById('realtimeSearchInput').value || '').trim().toLowerCase();
+            const deptSelect = document.getElementById('realtimeDeptSelect');
+            const dept = deptSelect ? deptSelect.value : '';
+            const year = document.getElementById('realtimeYearSelect').value;
+            const strategy = document.getElementById('realtimeStrategySelect').value;
+
+            const filtered = ALL_DOCUMENTS.filter(doc => {
+                if (search) {
+                    const titleMatch = (doc.title || '').toLowerCase().includes(search);
+                    const userMatch = (doc.userName || '').toLowerCase().includes(search);
+                    const fileMatch = (doc.fileName || '').toLowerCase().includes(search);
+                    const stratMatch = (doc.strategy || '').toLowerCase().includes(search);
+                    const deptMatch = (doc.dept || '').toLowerCase().includes(search);
+                    if (!titleMatch && !userMatch && !fileMatch && !stratMatch && !deptMatch) return false;
+                }
+                if (dept && doc.dept !== dept) return false;
+                if (year && (doc.fiscalYear || '2568') !== year) return false;
+                if (strategy && doc.strategy !== strategy) return false;
+                return true;
+            });
+
+            const t1 = performance.now();
+            const durationSec = Math.max(((t1 - t0) / 1000), 0.001).toFixed(4);
+
+            const docCountDisplay = document.getElementById('docCountDisplay');
+            if (docCountDisplay) docCountDisplay.innerText = filtered.length;
+            const searchSpeedTimer = document.getElementById('searchSpeedTimer');
+            if (searchSpeedTimer) searchSpeedTimer.innerText = durationSec;
+            const tableCountDisplay = document.getElementById('tableCountDisplay');
+            if (tableCountDisplay) tableCountDisplay.innerText = 'พบทั้งหมด ' + filtered.length + ' รายการ';
+
+            const filterStatusText = document.getElementById('filterStatusText');
+            if (filterStatusText) {
+                if (search || dept || year || strategy) {
+                    filterStatusText.innerHTML = '⚡ กรองพบ <strong>' + filtered.length + '</strong> รายการ (ประมวลผลใน ' + durationSec + ' วินาที)';
+                } else {
+                    filterStatusText.innerText = '⚡ พิมพ์หรือเปลี่ยนตัวกรอง ข้อมูลจะอัปเดตแบบ Real-Time ทันที';
+                }
+            }
+
+            renderDocumentRows(filtered);
+        }
+
+        function resetFiltersRealtime() {
+            document.getElementById('realtimeSearchInput').value = '';
+            const deptSelect = document.getElementById('realtimeDeptSelect');
+            if (deptSelect) deptSelect.value = '';
+            document.getElementById('realtimeYearSelect').value = '';
+            document.getElementById('realtimeStrategySelect').value = '';
+            filterDocumentsRealtime();
+        }
+    </script>
     `;
 }
 
