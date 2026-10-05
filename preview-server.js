@@ -253,6 +253,12 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
                             <span>🏆</span>
                             <span>ตรวจประเมิน ๔ ข้อ (๒ คะแนนเต็ม)</span>
                         </a>
+                        ${isAdmin ? `
+                        <a href="/admin/users" class="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${activeTab === 'users' ? 'bg-amber-400 text-blue-950 shadow-md ring-2 ring-yellow-300' : 'text-yellow-300 hover:bg-white/10 hover:text-white'}">
+                            <span>👥</span>
+                            <span>จัดการเจ้าหน้าที่ (${staffDatabase.length})</span>
+                        </a>
+                        ` : ''}
                         <a href="/profile" class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${activeTab === 'profile' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
                             <span>👤</span>
                             <span>ข้อมูลส่วนตัว</span>
@@ -289,6 +295,7 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
                     <a href="/documents" class="${activeTab === 'documents' ? 'text-yellow-300 font-bold' : 'text-slate-300'} px-2 py-1 whitespace-nowrap">📂 คลังเอกสาร</a>
                     <a href="/km" class="${activeTab === 'km' ? 'text-yellow-300 font-bold' : 'text-slate-300'} px-2 py-1 whitespace-nowrap">📚 KM</a>
                     <a href="/evaluation" class="${activeTab === 'evaluation' ? 'text-amber-400 font-bold' : 'text-yellow-300'} px-2 py-1 whitespace-nowrap">🏆 ตรวจประเมิน</a>
+                    ${isAdmin ? `<a href="/admin/users" class="${activeTab === 'users' ? 'text-amber-400 font-bold' : 'text-yellow-300'} px-2 py-1 whitespace-nowrap">👥 บุคลากร</a>` : ''}
                     <a href="/profile" class="${activeTab === 'profile' ? 'text-yellow-300 font-bold' : 'text-slate-300'} px-2 py-1 whitespace-nowrap">👤 โปรไฟล์</a>
                 </div>
             </div>
@@ -347,6 +354,95 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
             </div>
         </div>
         ` : ''}
+
+        <!-- Modal แก้ไขข้อมูลเอกสาร (Edit Document Modal) -->
+        <div id="editDocModal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 border border-slate-200">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl">✏️</span>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base font-prompt">แก้ไขข้อมูลเอกสารราชการ</h3>
+                            <p class="text-xs text-slate-500">ปรับปรุงข้อมูลหัวข้องาน ปีงบประมาณ หรือยุทธศาสตร์</p>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('editDocModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+                </div>
+
+                <form method="POST" action="/api/documents/update" class="space-y-4">
+                    <input type="hidden" id="editDocId" name="id">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            หัวข้องาน / ชื่องานเอกสาร <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="editDocTitle" name="title" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ยุทธศาสตร์การพัฒนาที่สอดคล้อง <span class="text-red-500">*</span>
+                        </label>
+                        <select id="editDocStrategy" name="strategy" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                            ${STRATEGIES.map(s => `<option value="${s}">${s}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                ปีงบประมาณ <span class="text-red-500">*</span>
+                            </label>
+                            <select id="editDocFiscalYear" name="fiscalYear" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                                <option value="2568">ปีงบประมาณ 2568</option>
+                                <option value="2567">ปีงบประมาณ 2567</option>
+                                <option value="2566">ปีงบประมาณ 2566</option>
+                            </select>
+                        </div>
+
+                        ${isAdmin ? `
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">สังกัดส่วนราชการ</label>
+                            <select id="editDocDept" name="dept" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                                <option value="นักบริหารท้องถิ่น">นักบริหารท้องถิ่น</option>
+                                <option value="สำนักงานปลัด">สำนักงานปลัด</option>
+                                <option value="กองคลัง">กองคลัง</option>
+                                <option value="กองช่าง">กองช่าง</option>
+                                <option value="กองสวัสดิการสังคม">กองสวัสดิการสังคม</option>
+                                <option value="กองการศึกษา ศาสนา และวัฒนธรรม">กองการศึกษา ศาสนา และวัฒนธรรม</option>
+                                <option value="หน่วยตรวจสอบภายใน">หน่วยตรวจสอบภายใน</option>
+                            </select>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="document.getElementById('editDocModal').classList.add('hidden')" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                            ยกเลิก
+                        </button>
+                        <button type="submit" class="px-5 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow">
+                            💾 บันทึกการแก้ไข
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function openEditDocModal(doc) {
+                document.getElementById('editDocId').value = doc.id;
+                document.getElementById('editDocTitle').value = doc.title || '';
+                document.getElementById('editDocFiscalYear').value = doc.fiscalYear || '2568';
+                if (document.getElementById('editDocStrategy')) {
+                    document.getElementById('editDocStrategy').value = doc.strategy || '';
+                }
+                if (document.getElementById('editDocDept') && doc.dept) {
+                    document.getElementById('editDocDept').value = doc.dept;
+                }
+                document.getElementById('editDocModal').classList.remove('hidden');
+            }
+        </script>
 
         <!-- Footer -->
         <footer class="bg-white border-t border-slate-200/80 py-4 text-center text-xs text-slate-500 mt-12">
@@ -494,6 +590,229 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // 6.1 Action: แก้ไขข้อมูลเอกสาร (Admin หรือเจ้าของเอกสาร)
+    if (url.pathname === '/api/documents/update' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const docId = parseInt(params.get('id') || '0', 10);
+            const doc = documentsDatabase.find(d => d.id === docId);
+
+            if (!doc) {
+                res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end('<h3>❌ ไม่พบเอกสารที่ต้องการแก้ไข</h3>');
+            }
+
+            if (currentUser.role !== 'admin' && doc.userName !== currentUser.name) {
+                res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end('<h3>❌ ไม่อนุญาต: ท่านไม่มีสิทธิ์แก้ไขเอกสารนี้</h3>');
+            }
+
+            const title = params.get('title')?.trim();
+            const fiscalYear = params.get('fiscalYear')?.trim();
+            const strategy = params.get('strategy')?.trim();
+            const dept = params.get('dept')?.trim();
+
+            if (title) doc.title = title;
+            if (fiscalYear) doc.fiscalYear = fiscalYear;
+            if (strategy) doc.strategy = strategy;
+            if (currentUser.role === 'admin' && dept) doc.dept = dept;
+
+            saveDocs();
+
+            const redirectUrl = req.headers.referer || '/documents?updated=1';
+            res.writeHead(302, { Location: redirectUrl });
+            return res.end();
+        });
+        return;
+    }
+
+    // 6.2 Action: ลบเอกสาร (Admin หรือเจ้าของเอกสาร)
+    if (url.pathname === '/api/documents/delete' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const docId = parseInt(params.get('id') || '0', 10);
+            const docIndex = documentsDatabase.findIndex(d => d.id === docId);
+
+            if (docIndex === -1) {
+                res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end('<h3>❌ ไม่พบเอกสารที่ต้องการลบ</h3>');
+            }
+
+            const doc = documentsDatabase[docIndex];
+            if (currentUser.role !== 'admin' && doc.userName !== currentUser.name) {
+                res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end('<h3>❌ ไม่อนุญาต: ท่านไม่มีสิทธิ์ลบเอกสารนี้</h3>');
+            }
+
+            documentsDatabase.splice(docIndex, 1);
+            saveDocs();
+
+            const redirectUrl = req.headers.referer || '/documents?deleted=1';
+            res.writeHead(302, { Location: redirectUrl });
+            return res.end();
+        });
+        return;
+    }
+
+    // 6.3 Action: เพิ่มเจ้าหน้าที่ใหม่ (Admin เท่านั้น)
+    if (url.pathname === '/api/admin/users/create' && req.method === 'POST') {
+        if (currentUser.role !== 'admin') {
+            res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+            return res.end('<h3>❌ ไม่อนุญาต: สิทธิ์การจัดการบุคลากรสงวนไว้สำหรับ Admin</h3>');
+        }
+
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const name = params.get('name')?.trim();
+            const phone = params.get('phone')?.trim();
+            const username = params.get('username')?.trim() || phone;
+            const password = params.get('password')?.trim() || 'Fk@123456';
+            const position = params.get('position')?.trim() || 'เจ้าหน้าที่';
+            const dept = params.get('dept')?.trim() || 'สำนักงานปลัด';
+            const type = params.get('type')?.trim() || 'ข้าราชการ';
+            const role = params.get('role')?.trim() || 'staff';
+            const email = params.get('email')?.trim() || '';
+
+            if (!name || !username) {
+                res.writeHead(302, { Location: '/admin/users?error=missing_fields' });
+                return res.end();
+            }
+
+            const exists = staffDatabase.find(u => u.username === username);
+            if (exists) {
+                res.writeHead(302, { Location: '/admin/users?error=duplicate_username' });
+                return res.end();
+            }
+
+            const maxId = staffDatabase.reduce((max, u) => Math.max(max, u.id || 0), 0);
+            staffDatabase.push({
+                id: maxId + 1,
+                name: name,
+                phone: phone,
+                username: username,
+                email: email,
+                password: password,
+                position: position,
+                type: type,
+                dept: dept,
+                role: role
+            });
+            saveUsers();
+
+            res.writeHead(302, { Location: '/admin/users?created=1' });
+            return res.end();
+        });
+        return;
+    }
+
+    // 6.4 Action: แก้ไขข้อมูลเจ้าหน้าที่ (Admin เท่านั้น)
+    if (url.pathname === '/api/admin/users/update' && req.method === 'POST') {
+        if (currentUser.role !== 'admin') {
+            res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+            return res.end('<h3>❌ ไม่อนุญาต: สิทธิ์การจัดการบุคลากรสงวนไว้สำหรับ Admin</h3>');
+        }
+
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const id = parseInt(params.get('id') || '0', 10);
+            const targetUser = staffDatabase.find(u => u.id === id);
+
+            if (!targetUser) {
+                res.writeHead(302, { Location: '/admin/users?error=not_found' });
+                return res.end();
+            }
+
+            const name = params.get('name')?.trim();
+            const phone = params.get('phone')?.trim();
+            const username = params.get('username')?.trim() || phone;
+            const password = params.get('password')?.trim();
+            const position = params.get('position')?.trim();
+            const dept = params.get('dept')?.trim();
+            const type = params.get('type')?.trim();
+            const role = params.get('role')?.trim();
+            const email = params.get('email')?.trim();
+
+            if (name) targetUser.name = name;
+            if (phone) targetUser.phone = phone;
+            if (username) targetUser.username = username;
+            if (password) targetUser.password = password;
+            if (position) targetUser.position = position;
+            if (dept) targetUser.dept = dept;
+            if (type) targetUser.type = type;
+            if (role) targetUser.role = role;
+            if (email !== undefined) targetUser.email = email;
+
+            saveUsers();
+
+            res.writeHead(302, { Location: '/admin/users?updated=1' });
+            return res.end();
+        });
+        return;
+    }
+
+    // 6.5 Action: ลบเจ้าหน้าที่ (Admin เท่านั้น)
+    if (url.pathname === '/api/admin/users/delete' && req.method === 'POST') {
+        if (currentUser.role !== 'admin') {
+            res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+            return res.end('<h3>❌ ไม่อนุญาต</h3>');
+        }
+
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const id = parseInt(params.get('id') || '0', 10);
+
+            if (currentUser.id === id) {
+                res.writeHead(302, { Location: '/admin/users?error=cannot_delete_self' });
+                return res.end();
+            }
+
+            const index = staffDatabase.findIndex(u => u.id === id);
+            if (index !== -1) {
+                staffDatabase.splice(index, 1);
+                saveUsers();
+            }
+
+            res.writeHead(302, { Location: '/admin/users?deleted=1' });
+            return res.end();
+        });
+        return;
+    }
+
+    // 6.6 Action: รีเซ็ตรหัสผ่านเจ้าหน้าที่ (Admin เท่านั้น)
+    if (url.pathname === '/api/admin/users/reset-password' && req.method === 'POST') {
+        if (currentUser.role !== 'admin') {
+            res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+            return res.end('<h3>❌ ไม่อนุญาต</h3>');
+        }
+
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const id = parseInt(params.get('id') || '0', 10);
+            const targetUser = staffDatabase.find(u => u.id === id);
+
+            if (targetUser) {
+                targetUser.password = 'Fk@123456';
+                saveUsers();
+            }
+
+            res.writeHead(302, { Location: '/admin/users?reset=1' });
+            return res.end();
+        });
+        return;
+    }
+
     // 7. Action: อัปโหลดเอกสารจริงเข้า Google Drive
     if (url.pathname === '/api/upload-real' && req.method === 'POST') {
         let body = '';
@@ -605,7 +924,33 @@ const server = http.createServer(async (req, res) => {
         return res.end(renderAppShell(currentUser, 'evaluation', renderEvaluationPage(currentUser)));
     }
 
-    // 12. แสดงหน้า Dashboard (GET /)
+    // 12. แสดงหน้าจัดการผู้ใช้งาน (GET /admin/users - Admin Only)
+    if (url.pathname === '/admin/users') {
+        if (currentUser.role !== 'admin') {
+            res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+            return res.end('<h3>❌ ไม่อนุญาต: สิทธิ์การจัดการบุคลากรสงวนไว้สำหรับ Admin เท่านั้น</h3>');
+        }
+
+        let notification = null;
+        if (url.searchParams.get('created')) {
+            notification = { type: 'success', message: 'เพิ่มข้อมูลเจ้าหน้าที่คนใหม่เรียบร้อยแล้ว' };
+        } else if (url.searchParams.get('updated')) {
+            notification = { type: 'success', message: 'บันทึกการแก้ไขข้อมูลเจ้าหน้าที่เรียบร้อยแล้ว' };
+        } else if (url.searchParams.get('deleted')) {
+            notification = { type: 'success', message: 'ลบข้อมูลเจ้าหน้าที่ออกจากระบบเรียบร้อยแล้ว' };
+        } else if (url.searchParams.get('reset')) {
+            notification = { type: 'success', message: 'รีเซ็ตรหัสผ่านเป็น Fk@123456 เรียบร้อยแล้ว' };
+        } else if (url.searchParams.get('error') === 'cannot_delete_self') {
+            notification = { type: 'error', message: 'ไม่สามารถลบบัญชีผู้ดูแลระบบที่กำลังใช้งานอยู่ได้' };
+        } else if (url.searchParams.get('error') === 'duplicate_username') {
+            notification = { type: 'error', message: 'ชื่อผู้ใช้งาน (Username) หรือเบอร์โทรศัพท์นี้มีในระบบแล้ว' };
+        }
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        return res.end(renderAppShell(currentUser, 'users', renderAdminUsersPage(currentUser, url), notification));
+    }
+
+    // 13. แสดงหน้า Dashboard (GET /)
     let notification = null;
     if (url.searchParams.get('config_saved')) {
         notification = { type: 'success', message: 'บันทึกการตั้งค่าคลังกลางเรียบร้อยแล้ว' };
@@ -795,7 +1140,7 @@ function renderDashboardPage(currentUser) {
                                 <th class="p-3.5">ผู้ปฏิบัติงาน</th>
                                 <th class="p-3.5">สังกัดกอง</th>
                                 <th class="p-3.5">ขนาด</th>
-                                <th class="p-3.5 text-center">ไฟล์ในคลัง</th>
+                                <th class="p-3.5 text-center">จัดการเอกสาร</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -816,11 +1161,26 @@ function renderDashboardPage(currentUser) {
                                     </td>
                                     <td class="p-3.5 text-slate-500 whitespace-nowrap">${doc.size}</td>
                                     <td class="p-3.5 text-center whitespace-nowrap">
-                                        <a href="${doc.driveLink}" target="_blank"
-                                           class="inline-flex items-center space-x-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-semibold border border-blue-200 transition">
-                                            <span>เปิดดู</span>
-                                            <span>↗</span>
-                                        </a>
+                                        <div class="inline-flex items-center space-x-1">
+                                            <a href="${doc.driveLink}" target="_blank"
+                                               class="inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-semibold border border-blue-200 transition text-[11px]" title="เปิดดูเอกสาร">
+                                                <span>เปิดดู</span>
+                                                <span>↗</span>
+                                            </a>
+                                            ${(currentUser.role === 'admin' || doc.userName === currentUser.name) ? `
+                                            <button onclick="openEditDocModal(${JSON.stringify(doc).replace(/"/g, '&quot;')})"
+                                               class="inline-flex items-center px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg font-bold border border-amber-200 transition text-[11px]" title="แก้ไขข้อมูล">
+                                                <span>✏️</span>
+                                            </button>
+                                            <form method="POST" action="/api/documents/delete" class="inline" onsubmit="return confirm('ยืนยันลบเอกสารนี้หรือไม่?')">
+                                                <input type="hidden" name="id" value="${doc.id}">
+                                                <button type="submit"
+                                                   class="inline-flex items-center px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-bold border border-red-200 transition text-[11px]" title="ลบเอกสาร">
+                                                    <span>🗑️</span>
+                                                </button>
+                                            </form>
+                                            ` : ''}
+                                        </div>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -1006,7 +1366,7 @@ function renderDocumentsArchivePage(currentUser, url) {
                             <th class="p-4">ผู้ส่งเอกสาร</th>
                             <th class="p-4">สังกัดกอง</th>
                             <th class="p-4">ขนาดไฟล์</th>
-                            <th class="p-4 text-center">ดูไฟล์ในคลัง</th>
+                            <th class="p-4 text-center">จัดการเอกสาร</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -1037,11 +1397,26 @@ function renderDocumentsArchivePage(currentUser, url) {
                                 </td>
                                 <td class="p-4 text-slate-500 whitespace-nowrap">${doc.size}</td>
                                 <td class="p-4 text-center whitespace-nowrap">
-                                    <a href="${doc.driveLink}" target="_blank"
-                                       class="inline-flex items-center space-x-1 px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold border border-blue-200 transition">
-                                        <span>เปิดดูเอกสาร</span>
-                                        <span>↗</span>
-                                    </a>
+                                    <div class="inline-flex items-center space-x-1.5">
+                                        <a href="${doc.driveLink}" target="_blank"
+                                           class="inline-flex items-center space-x-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold border border-blue-200 transition text-xs" title="เปิดดูเอกสาร">
+                                            <span>เปิดดู</span>
+                                            <span>↗</span>
+                                        </a>
+                                        ${(currentUser.role === 'admin' || doc.userName === currentUser.name) ? `
+                                        <button onclick="openEditDocModal(${JSON.stringify(doc).replace(/"/g, '&quot;')})"
+                                           class="inline-flex items-center px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl font-bold border border-amber-200 transition text-xs" title="แก้ไขข้อมูล">
+                                            <span>✏️ แก้ไข</span>
+                                        </button>
+                                        <form method="POST" action="/api/documents/delete" class="inline" onsubmit="return confirm('ยืนยันลบเอกสาร ${doc.title.replace(/'/g, "\\'")} ออกจากระบบหรือไม่?')">
+                                            <input type="hidden" name="id" value="${doc.id}">
+                                            <button type="submit"
+                                               class="inline-flex items-center px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl font-bold border border-red-200 transition text-xs" title="ลบเอกสาร">
+                                                <span>🗑️ ลบ</span>
+                                            </button>
+                                        </form>
+                                        ` : ''}
+                                    </div>
                                 </td>
                             </tr>
                         `).join('')}
@@ -1580,6 +1955,478 @@ function renderEvaluationPage(currentUser) {
         document.addEventListener('DOMContentLoaded', function() {
             runEvalBenchmark('ไฟฟ้า');
         });
+    </script>
+    `;
+}
+
+// -------------------------------------------------------------
+// หน้าจัดการผู้ใช้งาน (User Management - Admin Only)
+// -------------------------------------------------------------
+function renderAdminUsersPage(currentUser, url) {
+    const search = url.searchParams.get('search')?.toLowerCase() || '';
+    const deptFilter = url.searchParams.get('dept') || '';
+    const roleFilter = url.searchParams.get('role') || '';
+    const typeFilter = url.searchParams.get('type') || '';
+
+    let users = [...staffDatabase];
+
+    if (search) {
+        users = users.filter(u => 
+            u.name.toLowerCase().includes(search) || 
+            u.username.toLowerCase().includes(search) || 
+            u.phone.toLowerCase().includes(search) ||
+            u.position.toLowerCase().includes(search)
+        );
+    }
+    if (deptFilter) {
+        users = users.filter(u => u.dept === deptFilter);
+    }
+    if (roleFilter) {
+        users = users.filter(u => u.role === roleFilter);
+    }
+    if (typeFilter) {
+        users = users.filter(u => u.type === typeFilter);
+    }
+
+    const depts = [
+        "นักบริหารท้องถิ่น",
+        "สำนักงานปลัด",
+        "กองคลัง",
+        "กองช่าง",
+        "กองสวัสดิการสังคม",
+        "กองการศึกษา ศาสนา และวัฒนธรรม",
+        "หน่วยตรวจสอบภายใน"
+    ];
+
+    const types = ["ข้าราชการ", "พนักงานจ้างตามภารกิจ", "พนักงานจ้างทั่วไป", "จ้างเหมาบริการ"];
+
+    const deptColors = {
+        'นักบริหารท้องถิ่น': 'bg-amber-100 text-amber-900 border-amber-300',
+        'สำนักงานปลัด': 'bg-blue-100 text-blue-900 border-blue-300',
+        'กองคลัง': 'bg-emerald-100 text-emerald-900 border-emerald-300',
+        'กองช่าง': 'bg-orange-100 text-orange-900 border-orange-300',
+        'กองสวัสดิการสังคม': 'bg-purple-100 text-purple-900 border-purple-300',
+        'กองการศึกษา ศาสนา และวัฒนธรรม': 'bg-rose-100 text-rose-900 border-rose-300',
+        'หน่วยตรวจสอบภายใน': 'bg-slate-100 text-slate-800 border-slate-300'
+    };
+
+    const roleBadges = {
+        'admin': '<span class="px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold">👑 ผู้บริหาร (Admin)</span>',
+        'head': '<span class="px-2.5 py-1 bg-indigo-100 text-indigo-900 border border-indigo-300 rounded-lg text-xs font-bold">🏢 ผอ.กอง / หัวหน้า</span>',
+        'auditor': '<span class="px-2.5 py-1 bg-slate-100 text-slate-900 border border-slate-300 rounded-lg text-xs font-bold">🔍 ตรวจสอบภายใน</span>',
+        'staff': '<span class="px-2.5 py-1 bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium">👤 เจ้าหน้าที่</span>'
+    };
+
+    return `
+    <div class="space-y-6">
+
+        <!-- Top Header & Stat Cards -->
+        <div class="p-6 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 rounded-3xl text-white shadow-lg border-b-4 border-yellow-400">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-yellow-400 text-blue-950 text-xs font-black uppercase mb-2">
+                        <span>🛡️ สิทธิ์ผู้ดูแลระบบ (Admin Only)</span>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-bold font-prompt text-white">
+                        ระบบบริหารจัดการบุคลากรและผู้ใช้งาน (User Management)
+                    </h1>
+                    <p class="text-xs sm:text-sm text-blue-200 mt-1 max-w-2xl leading-relaxed">
+                        เพิ่ม ลบ แก้ไข ข้อมูลเจ้าหน้าที่ กำหนดสังกัดกอง ตำแหน่ง ประเภทบุคลากร สิทธิ์การใช้งาน และรีเซ็ตรหัสผ่านของบุคลากรทั้ง องค์การบริหารส่วนตำบลฝางคำ
+                    </p>
+                </div>
+                <div class="flex items-center space-x-3 w-full md:w-auto">
+                    <button onclick="document.getElementById('addUserModal').classList.remove('hidden')"
+                        class="w-full md:w-auto px-5 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-blue-950 font-extrabold text-xs rounded-2xl shadow-lg transition transform hover:scale-105 flex items-center justify-center space-x-2">
+                        <span>➕ เพิ่มเจ้าหน้าที่คนใหม่</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-white/10 text-xs">
+                <div class="bg-white/10 p-3 rounded-2xl border border-white/10 text-center">
+                    <div class="text-2xl font-black text-yellow-300 font-prompt">${staffDatabase.length}</div>
+                    <div class="text-[11px] text-blue-100 font-medium">บุคลากรทั้งหมด (ท่าน)</div>
+                </div>
+                <div class="bg-white/10 p-3 rounded-2xl border border-white/10 text-center">
+                    <div class="text-2xl font-black text-emerald-300 font-prompt">${staffDatabase.filter(u => u.type === 'ข้าราชการ').length}</div>
+                    <div class="text-[11px] text-blue-100 font-medium">ข้าราชการส่วนตำบล</div>
+                </div>
+                <div class="bg-white/10 p-3 rounded-2xl border border-white/10 text-center">
+                    <div class="text-2xl font-black text-amber-300 font-prompt">${staffDatabase.filter(u => u.type === 'พนักงานจ้างตามภารกิจ').length}</div>
+                    <div class="text-[11px] text-blue-100 font-medium">พนักงานจ้างตามภารกิจ</div>
+                </div>
+                <div class="bg-white/10 p-3 rounded-2xl border border-white/10 text-center">
+                    <div class="text-2xl font-black text-indigo-300 font-prompt">${staffDatabase.filter(u => u.type === 'จ้างเหมาบริการ').length}</div>
+                    <div class="text-[11px] text-blue-100 font-medium">จ้างเหมาบริการ</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-6">
+            <form method="GET" action="/admin/users" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                <div class="sm:col-span-1">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ค้นหาเจ้าหน้าที่</label>
+                    <input type="text" name="search" value="${search}" placeholder="ชื่อ, เบอร์โทร, ตำแหน่ง..."
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">กรองตามกอง</label>
+                    <select name="dept" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                        <option value="">-- ทุกกองงาน --</option>
+                        ${depts.map(d => `<option value="${d}" ${deptFilter === d ? 'selected' : ''}>${d}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ประเภทบุคลากร</label>
+                    <select name="type" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                        <option value="">-- ทุกประเภท --</option>
+                        ${types.map(t => `<option value="${t}" ${typeFilter === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ระดับสิทธิ์</label>
+                    <select name="role" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                        <option value="">-- ทุกระดับสิทธิ์ --</option>
+                        <option value="admin" ${roleFilter === 'admin' ? 'selected' : ''}>👑 ผู้บริหาร (Admin)</option>
+                        <option value="head" ${roleFilter === 'head' ? 'selected' : ''}>🏢 ผอ.กอง / หัวหน้า (Head)</option>
+                        <option value="auditor" ${roleFilter === 'auditor' ? 'selected' : ''}>🔍 ผู้ตรวจสอบภายใน (Auditor)</option>
+                        <option value="staff" ${roleFilter === 'staff' ? 'selected' : ''}>👤 เจ้าหน้าที่ (Staff)</option>
+                    </select>
+                </div>
+
+                <div class="sm:col-span-4 flex justify-between items-center pt-2">
+                    <span class="text-xs font-bold text-slate-500">
+                        พบเจ้าหน้าที่ทั้งหมด <strong class="text-blue-900">${users.length}</strong> ท่าน
+                    </span>
+                    <div class="flex space-x-2">
+                        <a href="/admin/users" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition">
+                            ล้างตัวกรอง
+                        </a>
+                        <button type="submit" class="px-6 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow transition">
+                            🔍 ค้นหา
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                            <th class="p-4 text-center w-12">#</th>
+                            <th class="p-4">ชื่อ - นามสกุล</th>
+                            <th class="p-4">Username / เบอร์โทร</th>
+                            <th class="p-4">สังกัดกอง</th>
+                            <th class="p-4">ตำแหน่ง / ประเภท</th>
+                            <th class="p-4">สิทธิ์ในระบบ</th>
+                            <th class="p-4">รหัสผ่าน</th>
+                            <th class="p-4 text-center">การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        ${users.map((u, idx) => `
+                            <tr class="hover:bg-blue-50/20 transition">
+                                <td class="p-4 text-center font-bold text-slate-400">${idx + 1}</td>
+                                <td class="p-4">
+                                    <div class="font-bold text-slate-800 text-sm">${u.name}</div>
+                                    <div class="text-[11px] text-slate-400">${u.email || '-'}</div>
+                                </td>
+                                <td class="p-4 font-mono font-bold text-blue-950">
+                                    ${u.username}
+                                </td>
+                                <td class="p-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${deptColors[u.dept] || 'bg-slate-100 text-slate-800'}">
+                                        ${u.dept}
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <div class="font-semibold text-slate-800">${u.position}</div>
+                                    <div class="text-[11px] text-slate-500">${u.type}</div>
+                                </td>
+                                <td class="p-4 whitespace-nowrap">
+                                    ${roleBadges[u.role] || u.role}
+                                </td>
+                                <td class="p-4 font-mono text-slate-600 whitespace-nowrap">
+                                    <span class="bg-slate-100 px-2 py-0.5 rounded font-bold text-[11px]">${u.password}</span>
+                                </td>
+                                <td class="p-4 text-center whitespace-nowrap">
+                                    <div class="inline-flex items-center space-x-1">
+                                        <button onclick="openEditUserModal(${JSON.stringify(u).replace(/"/g, '&quot;')})"
+                                            class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl border border-amber-200 transition text-xs flex items-center space-x-1" title="แก้ไขข้อมูล">
+                                            <span>✏️</span>
+                                            <span>แก้ไข</span>
+                                        </button>
+
+                                        <form method="POST" action="/api/admin/users/reset-password" class="inline" onsubmit="return confirm('ยืนยันรีเซ็ตรหัสผ่านของ ${u.name.replace(/'/g, "\\'")} เป็น Fk@123456 หรือไม่?')">
+                                            <input type="hidden" name="id" value="${u.id}">
+                                            <button type="submit"
+                                                class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl border border-blue-200 transition text-xs flex items-center space-x-1" title="รีเซ็ตรหัสผ่าน">
+                                                <span>🔑</span>
+                                                <span>รีเซ็ต</span>
+                                            </button>
+                                        </form>
+
+                                        ${u.id !== currentUser.id ? `
+                                        <form method="POST" action="/api/admin/users/delete" class="inline" onsubmit="return confirm('คำเตือน: ยืนยันลบ ${u.name.replace(/'/g, "\\'")} ออกจากระบบหรือไม่?')">
+                                            <input type="hidden" name="id" value="${u.id}">
+                                            <button type="submit"
+                                                class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-xl border border-red-200 transition text-xs flex items-center space-x-1" title="ลบผู้ใช้">
+                                                <span>🗑️</span>
+                                                <span>ลบ</span>
+                                            </button>
+                                        </form>
+                                        ` : ''}
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal เพิ่มเจ้าหน้าที่ใหม่ (Add User Modal) -->
+    <div id="addUserModal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-2">
+                    <span class="text-2xl">➕</span>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base font-prompt">เพิ่มเจ้าหน้าที่คนใหม่</h3>
+                        <p class="text-xs text-slate-500">เพิ่มรายชื่อและกำหนดสิทธิ์เข้าใช้งานระบบ อบต.ฝางคำ</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('addUserModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">✕</button>
+            </div>
+
+            <form method="POST" action="/api/admin/users/create" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ชื่อ - นามสกุล <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="name" required placeholder="เช่น นายสมใจ รักดี"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            เบอร์โทรศัพท์มือถือ <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="addPhone" name="phone" required placeholder="เช่น 0891234567"
+                            oninput="document.getElementById('addUsername').value = this.value"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ชื่อผู้ใช้งาน (Username) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="addUsername" name="username" required placeholder="เบอร์โทรหรือชื่อผู้ใช้"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            รหัสผ่านเริ่มต้น <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="password" value="Fk@123456" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            สังกัดกอง / ส่วนราชการ <span class="text-red-500">*</span>
+                        </label>
+                        <select name="dept" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                            ${depts.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ตำแหน่งราชการ <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="position" required placeholder="เช่น นายช่างโยธาปฏิบัติงาน, ผช.จพง.พัสดุ"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ประเภทบุคลากร <span class="text-red-500">*</span>
+                        </label>
+                        <select name="type" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                            ${types.map(t => `<option value="${t}">${t}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ระดับสิทธิ์ในระบบ <span class="text-red-500">*</span>
+                        </label>
+                        <select name="role" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                            <option value="staff" selected>👤 เจ้าหน้าที่ทั่วไป (ดูเฉพาะงานตนเอง)</option>
+                            <option value="head">🏢 ผอ.กอง / หัวหน้าสำนัก (ดูได้ทั้งกอง)</option>
+                            <option value="auditor">🔍 ผู้ตรวจสอบภายใน (ตรวจสอบเอกสารทุกกอง)</option>
+                            <option value="admin">👑 ผู้บริหาร / ผู้ดูแลระบบ (เต็มสิทธิ์ทุกอย่าง)</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            อีเมลติดต่อ (ถ้ามี)
+                        </label>
+                        <input type="email" name="email" placeholder="เช่น officer@fangkham.go.th"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="document.getElementById('addUserModal').classList.add('hidden')" class="px-5 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow">
+                        💾 บันทึกและเพิ่มเจ้าหน้าที่
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal แก้ไขข้อมูลเจ้าหน้าที่ (Edit User Modal) -->
+    <div id="editUserModal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                <div class="flex items-center space-x-2">
+                    <span class="text-2xl">✏️</span>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base font-prompt">แก้ไขข้อมูลเจ้าหน้าที่</h3>
+                        <p class="text-xs text-slate-500">ปรับปรุงกอง ตำแหน่ง สิทธิ์ เบอร์โทร หรือรหัสผ่าน</p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('editUserModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">✕</button>
+            </div>
+
+            <form method="POST" action="/api/admin/users/update" class="space-y-4">
+                <input type="hidden" id="editUserId" name="id">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ชื่อ - นามสกุล <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="editUserName" name="name" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            เบอร์โทรศัพท์มือถือ <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="editUserPhone" name="phone" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ชื่อผู้ใช้งาน (Username) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="editUserUsername" name="username" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            รหัสผ่านใหม่ (เว้นว่างหากไม่ต้องการเปลี่ยน)
+                        </label>
+                        <input type="text" id="editUserPassword" name="password" placeholder="ใส่รหัสใหม่หากต้องการเปลี่ยน"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            สังกัดกอง / ส่วนราชการ <span class="text-red-500">*</span>
+                        </label>
+                        <select id="editUserDept" name="dept" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                            ${depts.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ตำแหน่งราชการ <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="editUserPosition" name="position" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ประเภทบุคลากร <span class="text-red-500">*</span>
+                        </label>
+                        <select id="editUserType" name="type" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                            ${types.map(t => `<option value="${t}">${t}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ระดับสิทธิ์ในระบบ <span class="text-red-500">*</span>
+                        </label>
+                        <select id="editUserRole" name="role" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                            <option value="staff">👤 เจ้าหน้าที่ทั่วไป (ดูเฉพาะงานตนเอง)</option>
+                            <option value="head">🏢 ผอ.กอง / หัวหน้าสำนัก (ดูได้ทั้งกอง)</option>
+                            <option value="auditor">🔍 ผู้ตรวจสอบภายใน (ตรวจสอบเอกสารทุกกอง)</option>
+                            <option value="admin">👑 ผู้บริหาร / ผู้ดูแลระบบ (เต็มสิทธิ์ทุกอย่าง)</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            อีเมลติดต่อ
+                        </label>
+                        <input type="email" id="editUserEmail" name="email" placeholder="เช่น officer@fangkham.go.th"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="document.getElementById('editUserModal').classList.add('hidden')" class="px-5 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow">
+                        💾 บันทึกการแก้ไข
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openEditUserModal(user) {
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUserName').value = user.name || '';
+            document.getElementById('editUserPhone').value = user.phone || '';
+            document.getElementById('editUserUsername').value = user.username || '';
+            document.getElementById('editUserPassword').value = '';
+            document.getElementById('editUserDept').value = user.dept || 'สำนักงานปลัด';
+            document.getElementById('editUserPosition').value = user.position || '';
+            document.getElementById('editUserType').value = user.type || 'ข้าราชการ';
+            document.getElementById('editUserRole').value = user.role || 'staff';
+            document.getElementById('editUserEmail').value = user.email || '';
+
+            document.getElementById('editUserModal').classList.remove('hidden');
+        }
     </script>
     `;
 }
