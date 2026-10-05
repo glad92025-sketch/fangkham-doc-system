@@ -1,0 +1,15 @@
+{
+  "name": "fangkham-doc-system",
+  "version": "1.0.0",
+  "description": "ระบบคลังเอกสารและผลการปฏิบัติงาน องค์การบริหารส่วนตำบลฝางคำ",
+  "main": "preview-server.js",
+  "scripts": {
+    "start": "node preview-server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [],
+  "author": "อบต.ฝางคำ",
+  "license": "ISC"
+}

@@ -16,7 +16,7 @@ where node >nul 2>nul
 if %errorlevel% equ 0 (
     echo  [OK] เปิดเว็บที่: http://localhost:8000
     echo.
-    echo  (สามารถสลับดูมุมมองของเจ้าหน้าที่ทั้ง 48 ท่านได้จากเมนูด้านบนเว็บ)
+    echo  (สามารถเข้าใช้งานด้วยเบอร์โทรศัพท์ของเจ้าหน้าที่ทั้ง 54 ท่าน รหัสผ่าน Fk@123456)
     echo.
     node preview-server.js
 ) else (
