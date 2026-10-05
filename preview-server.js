@@ -3354,8 +3354,8 @@ function renderLoginPage(hasError) {
                         รหัสผ่าน <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <input type="password" id="passwordInput" name="password" required value="Fk@123456"
-                            placeholder="รหัสผ่านของท่าน"
+                        <input type="password" id="passwordInput" name="password" required
+                            placeholder="ระบุรหัสผ่านของท่าน"
                             class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                             🔒
@@ -3372,35 +3372,11 @@ function renderLoginPage(hasError) {
                 </div>
             </form>
 
-            <div class="mt-6 pt-5 border-t border-slate-200">
-                <p class="text-xs font-bold text-slate-600 mb-2.5 flex items-center">
-                    <span class="mr-1">⚡</span> ทางลัดทดสอบเข้าใช้งานด่วน:
-                </p>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button onclick="fillLogin('0874567858', 'Fk@123456')" class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-xl text-left border border-blue-200 transition font-medium">
-                        👑 Admin (ปลัด อบต.)<br><span class="text-[10px] text-slate-500">(สิทธิ์ดูแลระบบ)</span>
-                    </button>
-                    <button onclick="fillLogin('0619236333', 'Fk@123456')" class="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded-xl text-left border border-emerald-200 transition font-medium">
-                        💰 ผอ.กองคลัง<br><span class="text-[10px] text-slate-500">(ดูทั้งกองคลัง)</span>
-                    </button>
-                    <button onclick="fillLogin('0892849708', 'Fk@123456')" class="p-2 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-left border border-amber-200 transition font-medium">
-                        🔨 ผอ.กองช่าง<br><span class="text-[10px] text-slate-500">(ดูทั้งกองช่าง)</span>
-                    </button>
-                    <button onclick="fillLogin('0642239228', 'Fk@123456')" class="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 rounded-xl text-left border border-indigo-200 transition font-medium">
-                        📝 เจ้าหน้าที่ทั่วไป<br><span class="text-[10px] text-slate-500">(ดูเฉพาะงานตนเอง)</span>
-                    </button>
-                </div>
+            <div class="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-400">
+                องค์การบริหารส่วนตำบลฝางคำ • อำเภอสิรินธร จังหวัดอุบลราชธานี
             </div>
 
         </div>
-
-        <script>
-            function fillLogin(u, p) {
-                document.getElementById('usernameInput').value = u;
-                document.getElementById('passwordInput').value = p;
-                document.querySelector('form').submit();
-            }
-        </script>
 
     </body>
     </html>
