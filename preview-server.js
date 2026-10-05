@@ -216,90 +216,160 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
     <body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
 
         <!-- Top Header Bar -->
-        <header class="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white shadow-lg border-b-2 border-yellow-500 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6">
-                <div class="flex justify-between items-center h-16">
+        <header class="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white shadow-xl border-b-2 border-yellow-500 sticky top-0 z-40">
+            <div class="max-w-[1600px] mx-auto px-3 sm:px-6">
+                <div class="flex justify-between items-center h-16 gap-3">
                     
                     <!-- โลโก้และชื่อหน่วยงาน -->
-                    <div class="flex items-center space-x-3.5">
-                        <a href="/" class="flex items-center space-x-3 group">
-                            <div class="w-11 h-11 bg-gradient-to-br from-yellow-400 to-amber-500 text-blue-950 font-extrabold rounded-2xl flex items-center justify-center text-xl shadow-md border-2 border-yellow-300 group-hover:scale-105 transition transform">
+                    <div class="flex items-center shrink-0">
+                        <a href="/" class="flex items-center space-x-2.5 group">
+                            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-500 text-blue-950 font-black rounded-xl flex items-center justify-center text-lg shadow-md border-2 border-yellow-300 group-hover:scale-105 transition transform shrink-0">
                                 ฝค
                             </div>
-                            <div>
-                                <h1 class="text-base sm:text-lg font-bold font-prompt leading-tight text-white group-hover:text-yellow-300 transition">
-                                    อบต.ฝางคำ
-                                </h1>
-                                <p class="text-[11px] text-blue-200/80 font-medium">ระบบคลังเอกสารราชการประจำตำแหน่ง (5 TB)</p>
+                            <div class="flex flex-col">
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="text-base font-bold font-prompt text-white group-hover:text-yellow-300 transition whitespace-nowrap">
+                                        อบต.ฝางคำ
+                                    </span>
+                                    <span class="px-1.5 py-0.5 bg-yellow-400 text-blue-950 font-black text-[9px] rounded font-mono tracking-wider">5 TB</span>
+                                </div>
+                                <span class="text-[10px] text-blue-200/70 font-medium whitespace-nowrap hidden sm:inline">คลังเอกสารราชการดิจิทัล</span>
                             </div>
                         </a>
                     </div>
 
-                    <!-- เมนูนำทาง Navigation Links -->
-                    <nav class="hidden md:flex items-center space-x-1">
-                        <a href="/" class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${activeTab === 'dashboard' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
+                    <!-- เมนูนำทางหลัก Navigation Links -->
+                    <nav class="hidden lg:flex items-center space-x-1 xl:space-x-1.5">
+                        <a href="/" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 shrink-0 ${activeTab === 'dashboard' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
                             <span>📊</span>
-                            <span>แผงควบคุม</span>
+                            <span>แดชบอร์ด</span>
                         </a>
-                        <a href="/documents" class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${activeTab === 'documents' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
+                        <a href="/documents" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 shrink-0 ${activeTab === 'documents' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
                             <span>📂</span>
                             <span>คลังเอกสาร</span>
                         </a>
-                        <a href="/km" class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${activeTab === 'km' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
-                            <span>📚</span>
+                        <a href="/km" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 shrink-0 ${activeTab === 'km' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
+                            <span>💡</span>
                             <span>คลังความรู้ KM</span>
                         </a>
-                        <a href="/evaluation" class="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${activeTab === 'evaluation' ? 'bg-amber-400 text-blue-950 shadow-md ring-2 ring-yellow-300' : 'bg-yellow-400/20 text-yellow-300 hover:bg-yellow-400/30'}">
+                        <a href="/docs" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 shrink-0 ${activeTab === 'docs' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
+                            <span>📖</span>
+                            <span>คู่มือระบบ (Doc)</span>
+                        </a>
+                        <a href="/evaluation" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center space-x-1.5 shrink-0 ${activeTab === 'evaluation' ? 'bg-amber-400 text-blue-950 shadow-md ring-2 ring-yellow-300' : 'bg-yellow-400/15 text-yellow-300 hover:bg-yellow-400/25 border border-yellow-400/30'}">
                             <span>🏆</span>
-                            <span>ตรวจประเมิน ๔ ข้อ (๒ คะแนนเต็ม)</span>
+                            <span>ตรวจประเมิน (๒ คะแนน)</span>
                         </a>
                         ${isAdmin ? `
-                        <a href="/admin/users" class="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${activeTab === 'users' ? 'bg-amber-400 text-blue-950 shadow-md ring-2 ring-yellow-300' : 'text-yellow-300 hover:bg-white/10 hover:text-white'}">
+                        <a href="/admin/users" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center space-x-1.5 shrink-0 ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-white/10 hover:text-white'}">
                             <span>👥</span>
-                            <span>จัดการเจ้าหน้าที่ (${staffDatabase.length})</span>
+                            <span>บุคลากร (${staffDatabase.length})</span>
                         </a>
                         ` : ''}
-                        <a href="/profile" class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${activeTab === 'profile' ? 'bg-white/15 text-yellow-300 shadow-inner' : 'text-slate-300 hover:bg-white/10 hover:text-white'}">
-                            <span>👤</span>
-                            <span>ข้อมูลส่วนตัว</span>
-                        </a>
                     </nav>
 
-                    <!-- เมนูผู้ใช้งาน และปุ่มตั้งค่า -->
-                    <div class="flex items-center space-x-3">
-                        <a href="/profile" class="hidden sm:flex items-center space-x-2.5 p-1.5 pr-3 rounded-2xl hover:bg-white/10 transition border border-white/10">
-                            <div class="w-8 h-8 rounded-xl bg-blue-700 text-white flex items-center justify-center font-bold text-xs shadow-inner">
-                                ${currentUser.name.charAt(currentUser.name.indexOf(' ') + 1) || currentUser.name.charAt(0)}
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xs font-bold text-white max-w-[130px] truncate">${currentUser.name}</div>
-                                <div class="text-[10px] text-yellow-300 truncate max-w-[130px]">${currentUser.position}</div>
-                            </div>
-                        </a>
-
+                    <!-- ฝั่งขวา: เมนูผู้ใช้ & ปุ่มระบบ -->
+                    <div class="flex items-center space-x-2 shrink-0">
                         ${isAdmin ? `
-                        <button onclick="document.getElementById('driveModal').classList.remove('hidden')" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-blue-950 font-bold rounded-xl text-xs transition shadow flex items-center space-x-1">
-                            <span>⚙️ ตั้งค่าคลังกลาง</span>
+                        <button onclick="document.getElementById('driveModal').classList.remove('hidden')" class="hidden sm:inline-flex items-center space-x-1 px-2.5 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-bold rounded-xl text-xs transition shadow shrink-0 whitespace-nowrap">
+                            <span>⚙️</span>
+                            <span class="hidden md:inline">ตั้งค่าคลังกลาง</span>
                         </button>
                         ` : ''}
 
-                        <a href="/logout" class="bg-red-600/90 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-xl transition shadow font-semibold">
-                            ออกจากระบบ
+                        <!-- User Profile Dropdown Button -->
+                        <div class="relative">
+                            <button id="userDropdownTrigger" onclick="toggleUserDropdown(event)" class="flex items-center space-x-2 p-1.5 pr-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition text-left focus:outline-none">
+                                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-700 to-indigo-600 text-yellow-300 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                                    ${currentUser.name.charAt(currentUser.name.indexOf(' ') + 1) || currentUser.name.charAt(0)}
+                                </div>
+                                <div class="hidden sm:block text-left">
+                                    <div class="text-xs font-bold text-white max-w-[110px] xl:max-w-[140px] truncate leading-tight">${currentUser.name}</div>
+                                    <div class="text-[10px] text-yellow-300 truncate max-w-[110px] xl:max-w-[140px]">${currentUser.position}</div>
+                                </div>
+                                <span class="text-slate-400 text-xs">▾</span>
+                            </button>
+
+                            <!-- Floating Dropdown -->
+                            <div id="userDropdownMenu" class="hidden absolute right-0 top-12 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 text-slate-800">
+                                <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/70 rounded-t-2xl">
+                                    <div class="font-bold text-xs text-slate-900">${currentUser.name}</div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">${currentUser.position}</div>
+                                    <div class="text-[10px] text-slate-400">${currentUser.dept}</div>
+                                    <div class="mt-2">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${currentUser.role === 'admin' ? 'bg-amber-100 text-amber-800' : currentUser.role === 'head' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
+                                            ${currentUser.role === 'admin' ? '👑 ผู้บริหาร / Admin' : currentUser.role === 'head' ? '🏢 ผอ.กอง / หัวหน้า' : '👤 เจ้าหน้าที่ผู้ปฏิบัติงาน'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="py-1">
+                                    <a href="/profile" class="flex items-center px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                                        <span class="mr-2.5 text-sm">👤</span> ข้อมูลส่วนตัว / เปลี่ยนรหัสผ่าน
+                                    </a>
+                                    <a href="/docs" class="flex items-center px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                                        <span class="mr-2.5 text-sm">📖</span> คู่มือการใช้งานระบบ (Doc)
+                                    </a>
+                                    <a href="/evaluation" class="flex items-center px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                                        <span class="mr-2.5 text-sm">🏆</span> รายงานการตรวจประเมิน (๒ คะแนน)
+                                    </a>
+                                    ${isAdmin ? `
+                                    <a href="/admin/users" class="flex items-center px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                                        <span class="mr-2.5 text-sm">👥</span> จัดการบุคลากร (๕๔ ท่าน)
+                                    </a>
+                                    <button onclick="closeUserDropdown(); document.getElementById('driveModal').classList.remove('hidden');" class="w-full text-left flex items-center px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                                        <span class="mr-2.5 text-sm">⚙️</span> ตั้งค่าคลังกลาง (Google Drive 5 TB)
+                                    </button>
+                                    ` : ''}
+                                </div>
+                                <div class="border-t border-slate-100 mt-1 pt-1">
+                                    <a href="/logout" class="flex items-center px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-bold transition">
+                                        <span class="mr-2.5 text-sm">🚪</span> ออกจากระบบ
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Direct Logout Button -->
+                        <a href="/logout" title="ออกจากระบบ" class="px-2.5 py-1.5 bg-red-600/80 hover:bg-red-600 text-white rounded-xl text-xs font-semibold transition shadow shrink-0 whitespace-nowrap flex items-center space-x-1">
+                            <span>🚪</span>
+                            <span class="hidden md:inline">ออกจากระบบ</span>
                         </a>
                     </div>
                 </div>
 
-                <!-- เมนูมือถือ Mobile Sub-bar -->
-                <div class="flex md:hidden justify-between py-2 border-t border-white/10 text-[11px] font-medium overflow-x-auto gap-1">
-                    <a href="/" class="${activeTab === 'dashboard' ? 'text-yellow-300 font-bold' : 'text-slate-300'} px-2 py-1 whitespace-nowrap">📊 หน้าหลัก</a>
-                    <a href="/documents" class="${activeTab === 'documents' ? 'text-yellow-300 font-bold' : 'text-slate-300'} px-2 py-1 whitespace-nowrap">📂 คลังเอกสาร</a>
-                    <a href="/km" class="${activeTab === 'km' ? 'text-yellow-300 font-bold' : 'text-slate-300'} px-2 py-1 whitespace-nowrap">📚 KM</a>
-                    <a href="/evaluation" class="${activeTab === 'evaluation' ? 'text-amber-400 font-bold' : 'text-yellow-300'} px-2 py-1 whitespace-nowrap">🏆 ตรวจประเมิน</a>
-                    ${isAdmin ? `<a href="/admin/users" class="${activeTab === 'users' ? 'text-amber-400 font-bold' : 'text-yellow-300'} px-2 py-1 whitespace-nowrap">👥 บุคลากร</a>` : ''}
-                    <a href="/profile" class="${activeTab === 'profile' ? 'text-yellow-300 font-bold' : 'text-slate-300'} px-2 py-1 whitespace-nowrap">👤 โปรไฟล์</a>
+                <!-- เมนูมือถือและจอเล็ก Mobile / Tablet Navigation Sub-bar -->
+                <div class="flex lg:hidden justify-between py-2 border-t border-white/10 text-[11px] font-medium overflow-x-auto gap-2 scrollbar-none">
+                    <a href="/" class="${activeTab === 'dashboard' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">📊 แดชบอร์ด</a>
+                    <a href="/documents" class="${activeTab === 'documents' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">📂 คลังเอกสาร</a>
+                    <a href="/km" class="${activeTab === 'km' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">💡 KM</a>
+                    <a href="/docs" class="${activeTab === 'docs' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">📖 คู่มือ Doc</a>
+                    <a href="/evaluation" class="${activeTab === 'evaluation' ? 'text-amber-400 font-bold bg-white/10' : 'text-yellow-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">🏆 ตรวจประเมิน</a>
+                    ${isAdmin ? `<a href="/admin/users" class="${activeTab === 'users' ? 'text-blue-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">👥 จัดการ จนท.</a>` : ''}
+                    <a href="/profile" class="${activeTab === 'profile' ? 'text-yellow-300 font-bold bg-white/10' : 'text-slate-300'} px-2.5 py-1 rounded-lg whitespace-nowrap shrink-0">👤 โปรไฟล์</a>
                 </div>
             </div>
         </header>
+
+        <script>
+            function toggleUserDropdown(e) {
+                if (e) e.stopPropagation();
+                const menu = document.getElementById('userDropdownMenu');
+                if (menu) menu.classList.toggle('hidden');
+            }
+            function closeUserDropdown() {
+                const menu = document.getElementById('userDropdownMenu');
+                if (menu) menu.classList.add('hidden');
+            }
+            document.addEventListener('click', function(e) {
+                const menu = document.getElementById('userDropdownMenu');
+                const trigger = document.getElementById('userDropdownTrigger');
+                if (menu && !menu.classList.contains('hidden')) {
+                    if (trigger && !trigger.contains(e.target) && !menu.contains(e.target)) {
+                        menu.classList.add('hidden');
+                    }
+                }
+            });
+        </script>
 
         <!-- Notification Banner -->
         ${notification ? `
@@ -916,6 +986,12 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/km') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         return res.end(renderAppShell(currentUser, 'km', renderKmPage(currentUser, url)));
+    }
+
+    // 10.1 แสดงหน้า Documentation / คู่มือระบบ (GET /docs หรือ /doc)
+    if (url.pathname === '/docs' || url.pathname === '/doc') {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        return res.end(renderAppShell(currentUser, 'docs', renderDocumentationPage(currentUser)));
     }
 
     // 11. แสดงหน้ารายงานผลการตรวจประเมิน ๔ ข้อ (GET /evaluation)
@@ -1551,6 +1627,505 @@ function renderKmPage(currentUser, url) {
                 </div>
             ` : ''}
         </div>
+    </div>
+    `;
+}
+
+// -------------------------------------------------------------
+// หน้าเอกสารคู่มือการใช้งานระบบ (System Documentation / Docs)
+// -------------------------------------------------------------
+function renderDocumentationPage(currentUser) {
+    const isAdmin = currentUser.role === 'admin';
+    const usersCount = staffDatabase.length;
+    const docsCount = documentsDatabase.length;
+
+    return `
+    <style>
+        @media print {
+            body { background: white !important; color: black !important; }
+            header, footer, nav, .no-print { display: none !important; }
+            main { padding: 0 !important; max-width: 100% !important; }
+            .print-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid; }
+            .print-page-break { page-break-after: always; }
+        }
+        html { scroll-behavior: smooth; }
+    </style>
+
+    <div class="space-y-6">
+
+        <!-- Top Action Bar (Print button & Quick Links) -->
+        <div class="no-print flex flex-wrap justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-slate-200/80 gap-3">
+            <div class="flex items-center space-x-2 text-xs text-slate-600">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block animate-ping"></span>
+                <span class="font-bold text-slate-800">คู่มือการใช้งานและเอกสารกำกับระบบฉบับทางการ</span>
+                <span class="hidden sm:inline text-slate-400">• เวอร์ชัน 2.0 (คลังกลาง Google Drive 5 TB)</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="/evaluation" class="px-4 py-2 border border-yellow-400 bg-yellow-50 text-blue-950 hover:bg-yellow-100 text-xs font-bold rounded-xl transition flex items-center space-x-1.5 shadow-sm">
+                    <span>🏆</span>
+                    <span>เกณฑ์ตรวจประเมิน ๔ ข้อ (๒ คะแนนเต็ม)</span>
+                </a>
+                <button onclick="window.print()" class="px-5 py-2 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow transition flex items-center space-x-1.5">
+                    <span>🖨️</span>
+                    <span>สั่งพิมพ์คู่มือราชการ (A4)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Documentation Hero Card -->
+        <div class="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 rounded-3xl text-white shadow-xl p-6 sm:p-8 border-2 border-yellow-400 print-card">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-2 text-center md:text-left">
+                    <div class="inline-flex items-center space-x-2 bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 px-3 py-1 rounded-full text-xs font-bold uppercase">
+                        <span>📖 เอกสารกำกับระบบและคู่มือปฏิบัติงาน (System Documentation)</span>
+                    </div>
+                    <h1 class="text-xl sm:text-3xl font-extrabold font-prompt leading-tight text-white">
+                        ระบบคลังเอกสารราชการดิจิทัลและผลการปฏิบัติงาน
+                    </h1>
+                    <p class="text-xs sm:text-sm text-blue-200/90 max-w-2xl leading-relaxed">
+                        องค์การบริหารส่วนตำบลฝางคำ อำเภอสิรินธร จังหวัดอุบลราชธานี<br>
+                        รองรับบุคลากร ๕๔ ท่าน • พื้นที่จัดเก็บบน Google Cloud Workspace (5 TB) • สอดคล้อง ๕ ยุทธศาสตร์ อปท.
+                    </p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center shrink-0 w-full sm:w-auto">
+                    <div class="text-2xl font-black text-yellow-300 font-prompt">5,000 GB</div>
+                    <div class="text-[11px] text-blue-100 font-medium mt-0.5">ความจุคลังกลาง Google Drive</div>
+                    <div class="mt-2 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-lg px-2 py-0.5 font-bold">
+                        ● ออนไลน์พร้อมใช้งาน 100%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Layout: Index Sidebar (Left) + Content (Right) -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Quick Index Sidebar (Sticky) -->
+            <div class="lg:col-span-1 no-print">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 sticky top-24 space-y-3">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-400 font-prompt flex items-center">
+                        <span class="mr-1.5">📑</span> สารบัญคู่มือระบบ
+                    </h3>
+                    <nav class="space-y-1 text-xs">
+                        <a href="#sec-overview" class="block p-2 rounded-xl text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                            ๑. ภาพรวมและวัตถุประสงค์
+                        </a>
+                        <a href="#sec-roles" class="block p-2 rounded-xl text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                            ๒. บทบาทและตารางกำหนดสิทธิ์
+                        </a>
+                        <a href="#sec-staff" class="block p-2 rounded-xl text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                            ๓. คู่มือสำหรับเจ้าหน้าที่ (Staff)
+                        </a>
+                        <a href="#sec-head" class="block p-2 rounded-xl text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                            ๔. คู่มือสำหรับ ผอ.กอง (Head)
+                        </a>
+                        <a href="#sec-admin" class="block p-2 rounded-xl text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                            ๕. คู่มือผู้ดูแลระบบ (Admin)
+                        </a>
+                        <a href="#sec-criteria" class="block p-2 rounded-xl text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                            ๖. เกณฑ์ตรวจประเมิน ๔ ข้อ (๒ คะแนน)
+                        </a>
+                        <a href="#sec-arch" class="block p-2 rounded-xl text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                            ๗. สถาปัตยกรรมและความปลอดภัย
+                        </a>
+                        <a href="#sec-faq" class="block p-2 rounded-xl text-slate-700 hover:bg-blue-50 hover:text-blue-900 font-medium transition">
+                            ๘. คำถามที่พบบ่อย (FAQ)
+                        </a>
+                    </nav>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="text-[11px] text-slate-500 font-medium mb-2">ลิงก์ทางลัดในระบบ:</div>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <a href="/documents" class="text-center p-2 rounded-xl bg-slate-50 hover:bg-blue-50 text-[11px] text-slate-700 font-bold border border-slate-200 transition">
+                                📂 คลังเอกสาร
+                            </a>
+                            <a href="/km" class="text-center p-2 rounded-xl bg-slate-50 hover:bg-blue-50 text-[11px] text-slate-700 font-bold border border-slate-200 transition">
+                                💡 คลัง KM
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Articles (Right 3 cols) -->
+            <div class="lg:col-span-3 space-y-6">
+
+                <!-- ๑. ภาพรวมและวัตถุประสงค์ -->
+                <section id="sec-overview" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 print-card space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-xl bg-blue-900 text-white font-bold flex items-center justify-center text-sm">๑</span>
+                        <div>
+                            <h2 class="text-lg font-bold font-prompt text-slate-900">ภาพรวมและวัตถุประสงค์โครงการ</h2>
+                            <p class="text-xs text-slate-500">โครงการพัฒนาระบบคลังเอกสารดิจิทัลและพื้นที่จัดเก็บบนคลาวด์ อบต.ฝางคำ</p>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-700 leading-relaxed space-y-3">
+                        <p>
+                            ระบบ <strong>e-Document & Cloud Storage (5 TB)</strong> ขององค์การบริหารส่วนตำบลฝางคำ ได้รับการพัฒนาขึ้นเพื่อแก้ไขปัญหาการจัดเก็บเอกสารราชการที่กระจัดกระจาย เอกสารสูญหาย หรือค้นหายาก ให้เปลี่ยนผ่านสู่ระบบคลังกลางดิจิทัลที่มีประสิทธิภาพสูง รวดเร็ว และปลอดภัย
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                            <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100">
+                                <div class="text-blue-900 font-bold mb-1 text-sm">⚡ ค้นหาเอกสาร < ๓๐ วินาที</div>
+                                <div class="text-[11px] text-slate-600">สืบค้นเอกสารและผลงานตามชื่อเรื่อง ผู้ส่ง สังกัดกอง หรือยุทธศาสตร์ได้ทันที</div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+                                <div class="text-emerald-900 font-bold mb-1 text-sm">🏛️ คลังกลาง 5 TB ถาวร</div>
+                                <div class="text-[11px] text-slate-600">เชื่อมต่อ Google Cloud Workspace รองรับไฟล์ทุกชนิดไม่จำกัดระยะเวลา</div>
+                            </div>
+                            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-100">
+                                <div class="text-amber-900 font-bold mb-1 text-sm">🎯 สนับสนุน ๕ ยุทธศาสตร์</div>
+                                <div class="text-[11px] text-slate-600">เชื่อมโยงผลการปฏิบัติราชการจริงเข้ากับแผนพัฒนาท้องถิ่นของ อบต.ฝางคำ</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ๒. บทบาทและตารางกำหนดสิทธิ์ -->
+                <section id="sec-roles" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 print-card space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-xl bg-purple-900 text-white font-bold flex items-center justify-center text-sm">๒</span>
+                        <div>
+                            <h2 class="text-lg font-bold font-prompt text-slate-900">บทบาทและตารางกำหนดสิทธิ์การใช้งาน (Roles & Permissions)</h2>
+                            <p class="text-xs text-slate-500">ระบบรักษาความปลอดภัยและการควบคุมการเข้าถึงตามโครงสร้างสายการบังคับบัญชา</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden">
+                            <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">ระดับสิทธิ์ (Role)</th>
+                                    <th class="p-3 text-center">ดูเอกสารตนเอง</th>
+                                    <th class="p-3 text-center">ดูเอกสารทั้งกอง</th>
+                                    <th class="p-3 text-center">ดูเอกสารทุกกอง</th>
+                                    <th class="p-3 text-center">ส่งงาน/อัปโหลด</th>
+                                    <th class="p-3 text-center">แก้ไข/ลบเอกสาร</th>
+                                    <th class="p-3 text-center">จัดการบุคลากร (54)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-slate-700">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-3 font-bold text-slate-900">
+                                        👤 เจ้าหน้าที่ผู้ปฏิบัติงาน (Staff)
+                                        <div class="text-[10px] text-slate-400 font-normal">ข้าราชการ/พนักงานจ้างทั่วไป</div>
+                                    </td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-slate-300">❌</td>
+                                    <td class="p-3 text-center text-slate-300">❌</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-blue-600 font-semibold">เฉพาะของตนเอง</td>
+                                    <td class="p-3 text-center text-slate-300">❌</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-3 font-bold text-indigo-900">
+                                        🏢 ผอ.กอง / หัวหน้าสำนัก (Head)
+                                        <div class="text-[10px] text-slate-400 font-normal">ผู้อำนวยการ 6 กองงาน</div>
+                                    </td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-slate-300">❌</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-blue-600 font-semibold">เฉพาะของตนเอง</td>
+                                    <td class="p-3 text-center text-slate-300">❌</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-3 font-bold text-purple-900">
+                                        🔍 ผู้ตรวจสอบภายใน (Auditor)
+                                        <div class="text-[10px] text-slate-400 font-normal">หน่วยตรวจสอบภายใน</div>
+                                    </td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅ (ดู/สืบค้น)</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-blue-600 font-semibold">เฉพาะของตนเอง</td>
+                                    <td class="p-3 text-center text-slate-300">❌</td>
+                                </tr>
+                                <tr class="hover:bg-amber-50/50 bg-amber-50/20">
+                                    <td class="p-3 font-bold text-amber-900">
+                                        👑 ผู้บริหาร / ผู้ดูแลระบบ (Admin)
+                                        <div class="text-[10px] text-amber-700 font-normal">ปลัด อบต. / ผู้ดูแลระบบ</div>
+                                    </td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅ (เต็มสิทธิ์)</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅ (แก้ไข/ลบได้ทุกไฟล์)</td>
+                                    <td class="p-3 text-center text-emerald-600 font-bold">✅ (เต็มสิทธิ์)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- ๓. คู่มือสำหรับเจ้าหน้าที่ผู้ปฏิบัติงาน (Staff) -->
+                <section id="sec-staff" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 print-card space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-700 text-white font-bold flex items-center justify-center text-sm">๓</span>
+                        <div>
+                            <h2 class="text-lg font-bold font-prompt text-slate-900">คู่มือการใช้งานสำหรับเจ้าหน้าที่ผู้ปฏิบัติงาน (Staff Guide)</h2>
+                            <p class="text-xs text-slate-500">ขั้นตอนการเข้าสู่ระบบ ส่งงาน ค้นหา แก้ไข และเปลี่ยนรหัสผ่าน</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 text-xs text-slate-700 leading-relaxed">
+                        <!-- Step 1 -->
+                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div class="font-bold text-slate-900 flex items-center space-x-2">
+                                <span class="px-2 py-0.5 bg-blue-900 text-white rounded-md text-[11px]">ขั้นตอนที่ ๑</span>
+                                <span class="text-sm">การเข้าสู่ระบบครั้งแรก (First Login)</span>
+                            </div>
+                            <p>
+                                ๑. เปิดเว็บบราวเซอร์ไปยังที่อยู่ระบบของ อบต.ฝางคำ หน้า <code>/login</code><br>
+                                ๒. <strong>ชื่อผู้ใช้งาน (Username):</strong> ระบุ <strong>หมายเลขโทรศัพท์มือถือ</strong> ของท่าน (ตามฐานข้อมูล ๕๔ ท่าน)<br>
+                                ๓. <strong>รหัสผ่านเริ่มต้น (Default Password):</strong> ระบุ <code>Fk@123456</code><br>
+                                ๔. คลิกปุ่ม <strong>"เข้าสู่ระบบ"</strong>
+                            </p>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div class="font-bold text-slate-900 flex items-center space-x-2">
+                                <span class="px-2 py-0.5 bg-blue-900 text-white rounded-md text-[11px]">ขั้นตอนที่ ๒</span>
+                                <span class="text-sm">การส่งผลงาน / อัปโหลดเอกสารราชการเข้าคลังกลาง (5 TB)</span>
+                            </div>
+                            <p>
+                                ๑. ไปที่หน้า <strong>"แดชบอร์ด"</strong> ดูที่กล่องด้านซ้าย <strong>"ส่งผลงาน / เอกสารราชการ"</strong><br>
+                                ๒. กรอก <strong>หัวข้องาน / ชื่องานเอกสาร</strong> เช่น <em>รายงานผลการตรวจรับพัสดุ งวดที่ ๑</em><br>
+                                ๓. เลือก <strong>ยุทธศาสตร์การพัฒนาที่สอดคล้อง</strong> (จาก ๕ ยุทธศาสตร์ของ อบต.ฝางคำ)<br>
+                                ๔. เลือก <strong>ปีงบประมาณ</strong> (เช่น ๒๕๖๘, ๒๕๖๗)<br>
+                                ๕. คลิกเลือก <strong>ไฟล์เอกสารต้นฉบับจริง</strong> (รองรับ PDF, Word .docx, Excel .xlsx, ภาพถ่าย ฯลฯ)<br>
+                                ๖. กดปุ่ม <strong>"📤 ส่งงานขึ้นคลังกลาง อบต.ฝางคำ"</strong> — เอกสารจะถูกบันทึกส่งตรงเข้า Google Drive และฐานข้อมูลกลางทันที
+                            </p>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div class="font-bold text-slate-900 flex items-center space-x-2">
+                                <span class="px-2 py-0.5 bg-blue-900 text-white rounded-md text-[11px]">ขั้นตอนที่ ๓</span>
+                                <span class="text-sm">การค้นหาและเปิดดูเอกสาร (ค้นหาฉับไว < ๓๐ วินาที)</span>
+                            </div>
+                            <p>
+                                ๑. ไปที่เมนู <strong>"📂 คลังเอกสาร"</strong><br>
+                                ๒. พิมพ์คำค้นหาในช่อง <strong>"ค้นหาเอกสาร"</strong> (สามารถค้นด้วยชื่องาน, ชื่อผู้ส่ง, ยุทธศาสตร์ หรือชื่อไฟล์)<br>
+                                ๓. สามารถเลือกกรองตาม <strong>สังกัดกอง</strong>, <strong>ปีงบประมาณ</strong> หรือ <strong>ยุทธศาสตร์ ๕ ด้าน</strong> ได้ตามต้องการ<br>
+                                ๔. คลิกปุ่ม <strong>[เปิดดู ↗]</strong> ในตาราง เพื่อเปิดดูไฟล์ต้นฉบับใน Google Drive หรือดาวน์โหลดมาใช้งาน
+                            </p>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div class="font-bold text-slate-900 flex items-center space-x-2">
+                                <span class="px-2 py-0.5 bg-blue-900 text-white rounded-md text-[11px]">ขั้นตอนที่ ๔</span>
+                                <span class="text-sm">การแก้ไขและลบเอกสารที่ตนเองส่ง</span>
+                            </div>
+                            <p>
+                                ๑. ในตารางเอกสาร จะมีปุ่ม <strong>[✏️ แก้ไข]</strong> และ <strong>[🗑️ ลบ]</strong> ในแถวเอกสารที่ท่านเป็นผู้อัปโหลด<br>
+                                ๒. คลิก <strong>[✏️ แก้ไข]</strong> เพื่อแก้ไขชื่อเรื่อง ปีงบประมาณ หรือยุทธศาสตร์ แล้วกดบันทึก<br>
+                                ๓. คลิก <strong>[🗑️ ลบ]</strong> และกดยืนยัน หากต้องการยกเลิกหรือลบเอกสารออกจากระบบ
+                            </p>
+                        </div>
+
+                        <!-- Step 5 -->
+                        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div class="font-bold text-slate-900 flex items-center space-x-2">
+                                <span class="px-2 py-0.5 bg-blue-900 text-white rounded-md text-[11px]">ขั้นตอนที่ ๕</span>
+                                <span class="text-sm">การแก้ไขข้อมูลส่วนตัวและเปลี่ยนรหัสผ่าน</span>
+                            </div>
+                            <p>
+                                ๑. คลิกที่ <strong>ชื่อของท่าน</strong> บนแถบเมนูด้านบน แล้วเลือก <strong>"👤 ข้อมูลส่วนตัว / เปลี่ยนรหัสผ่าน"</strong> (หรือเปิด <code>/profile</code>)<br>
+                                ๒. ในกล่อง <em>"แก้ไขข้อมูลการติดต่อส่วนตัว"</em>: สามารถอัปเดตเบอร์โทรศัพท์ (ซึ่งใช้เป็น Username) และอีเมลได้<br>
+                                ๓. ในกล่อง <em>"เปลี่ยนรหัสผ่านส่วนตัว"</em>: กรอกรหัสผ่านเดิม และระบุรหัสผ่านใหม่ (อย่างน้อย ๖ ตัวอักษร) แล้วกดบันทึก
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ๔. คู่มือสำหรับ ผอ.กอง / หัวหน้าส่วนราชการ (Head) -->
+                <section id="sec-head" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 print-card space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-xl bg-indigo-900 text-white font-bold flex items-center justify-center text-sm">๔</span>
+                        <div>
+                            <h2 class="text-lg font-bold font-prompt text-slate-900">คู่มือสำหรับผู้อำนวยการกอง / หัวหน้าสำนัก (Department Head Guide)</h2>
+                            <p class="text-xs text-slate-500">การกำกับติดตามเอกสารในกอง และการแลกเปลี่ยนเรียนรู้องค์ความรู้ KM</p>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-700 leading-relaxed space-y-3">
+                        <p>
+                            • <strong>การตรวจติดตามงานในสังกัด:</strong> เมื่อเข้าสู่ระบบด้วยบัญชีระดับ Head (ผอ.กอง) ระบบจะแสดงภาพรวมเอกสารและผลงานของ <strong>เจ้าหน้าที่ทุกคนในสังกัดกองของท่าน</strong> โดยอัตโนมัติ ทำให้สามารถติดตามความก้าวหน้าและการส่งมอบงานตามแผนปฏิบัติราชการได้อย่างครบถ้วน<br>
+                            • <strong>การศึกษาและแลกเปลี่ยน KM:</strong> ผอ.กอง สามารถเข้าศึกษาคลังความรู้ <strong>"💡 คลังความรู้ KM"</strong> เพื่อดาวน์โหลดมาตรฐานขั้นตอนการปฏิบัติงาน (SOP) และแนวทางปฏิบัติที่ดี (Best Practice) ของกองอื่นๆ นำมาประยุกต์ใช้ในการพัฒนาการทำงานร่วมกัน
+                        </p>
+                    </div>
+                </section>
+
+                <!-- ๕. คู่มือสำหรับผู้ดูแลระบบ (Admin) -->
+                <section id="sec-admin" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 print-card space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-xl bg-amber-600 text-white font-bold flex items-center justify-center text-sm">๕</span>
+                        <div>
+                            <h2 class="text-lg font-bold font-prompt text-slate-900">คู่มือสำหรับผู้ดูแลระบบ (Admin Guide)</h2>
+                            <p class="text-xs text-slate-500">การจัดการบุคลากร (เพิ่ม/แก้ไข/ลบ/รีเซ็ตรหัส) และการเชื่อมต่อ Google Drive 5 TB</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 text-xs text-slate-700 leading-relaxed">
+                        <!-- Admin Sub 1 -->
+                        <div class="p-4 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-2">
+                            <div class="font-bold text-amber-950 text-sm">
+                                👥 การบริหารจัดการบุคลากรทั้ง ๕๔ ท่าน <code>(/admin/users)</code>
+                            </div>
+                            <p>
+                                ๑. <strong>เพิ่มเจ้าหน้าที่ใหม่:</strong> คลิกปุ่ม <code>+ เพิ่มเจ้าหน้าที่ใหม่</code> ระบุชื่อ-สกุล, เบอร์โทร, กอง/สังกัด, ตำแหน่ง, ประเภทบุคลากร และกำหนดสิทธิ์ (Admin, Head, Staff)<br>
+                                ๒. <strong>แก้ไขข้อมูล:</strong> คลิกปุ่ม <code>[✏️ แก้ไข]</code> ในแถวของเจ้าหน้าที่ท่านนั้น เพื่ออัปเดตกอง ย้ายสังกัด เปลี่ยนตำแหน่ง หรือเปลี่ยนสิทธิ์<br>
+                                ๓. <strong>รีเซ็ตรหัสผ่าน:</strong> หากเจ้าหน้าที่ลืมรหัสผ่าน แอดมินสามารถคลิก <code>[🔑 รีเซ็ต]</code> เพื่อตั้งรหัสกลับเป็น <code>Fk@123456</code> ได้ทันที<br>
+                                ๔. <strong>ลบเจ้าหน้าที่:</strong> คลิก <code>[🗑️ ลบ]</code> เพื่อนำบัญชีออกจากระบบ (ระบบมีระบบป้องกันไม่ให้แอดมินลบบัญชีตนเอง)
+                            </p>
+                        </div>
+
+                        <!-- Admin Sub 2 -->
+                        <div class="p-4 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-2">
+                            <div class="font-bold text-amber-950 text-sm">
+                                ⚙️ การตั้งค่าการเชื่อมต่อ Google Drive คลังกลาง (5 TB)
+                            </div>
+                            <p>
+                                ๑. คลิกที่เมนู <strong>"⚙️ ตั้งค่าคลังกลาง"</strong> บนแถบเมนูบาร์ด้านบน<br>
+                                ๒. กรอก <strong>Google Apps Script Web App URL</strong> ที่ได้จากการ Deploy สคริปต์ใน Google Drive บัญชีคลังกลาง (<code>akaradran2568@gmail.com</code>)<br>
+                                ๓. กดปุ่ม <strong>"💾 บันทึกการตั้งค่า"</strong> ไฟล์ทุกไฟล์ที่ส่งในระบบจะวิ่งตรงเข้าสู่ Google Drive กลางทันที
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ๖. สาระสำคัญและแนวทางการตรวจประเมิน ๔ ข้อ (๒ คะแนนเต็ม) -->
+                <section id="sec-criteria" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 print-card space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-xl bg-yellow-500 text-blue-950 font-black flex items-center justify-center text-sm">๖</span>
+                        <div>
+                            <h2 class="text-lg font-bold font-prompt text-slate-900">สาระสำคัญและแนวทางการตรวจประเมิน ๔ ข้อ (๒ คะแนนเต็ม)</h2>
+                            <p class="text-xs text-slate-500">ข้อมูลประกอบการพิจารณาการตรวจประเมินประสิทธิภาพ อปท. (LPA) และรางวัลธรรมาภิบาล</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-700">
+                        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                            <div class="font-bold text-emerald-950 mb-1 flex items-center justify-between">
+                                <span>ข้อ ๑: ค้นหาง่าย สะดวก รวดเร็ว</span>
+                                <span class="text-emerald-700 font-bold">✓ บรรลุ</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">
+                                เกณฑ์กำหนด: ค้นหาเอกสารได้ภายใน ๓๐ วินาที<br>
+                                <strong>ผลงานจริง:</strong> ระบบมีช่องค้นหา Realtime พร้อมตัวกรองตามกอง ปีงบ และยุทธศาสตร์ ค้นหาพบเอกสารในเวลาเฉลี่ย <strong>0.04 วินาที</strong>
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                            <div class="font-bold text-emerald-950 mb-1 flex items-center justify-between">
+                                <span>ข้อ ๒: สนับสนุนการทำงานจริง</span>
+                                <span class="text-emerald-700 font-bold">✓ บรรลุ</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">
+                                เกณฑ์กำหนด: มีตัวอย่างการนำมาใช้ปฏิบัติงานจริง<br>
+                                <strong>ผลงานจริง:</strong> บุคลากร ๕๔ ท่าน ใช้งานจริงทั้ง ๖ กองงาน มีเอกสารผลงานและโครงการจัดเก็บในคลังกลางครบถ้วน
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                            <div class="font-bold text-emerald-950 mb-1 flex items-center justify-between">
+                                <span>ข้อ ๓: สนับสนุน KM และ Best Practice</span>
+                                <span class="text-emerald-700 font-bold">✓ บรรลุ</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">
+                                เกณฑ์กำหนด: มีระบบจัดการความรู้และแลกเปลี่ยนแนวปฏิบัติที่ดี<br>
+                                <strong>ผลงานจริง:</strong> มีเมนู <strong>💡 คลังความรู้ KM</strong> จัดเก็บ SOP และคู่มือปฏิบัติงานมาตรฐาน ๖ กองงาน
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                            <div class="font-bold text-emerald-950 mb-1 flex items-center justify-between">
+                                <span>ข้อ ๔: สนับสนุนตามยุทธศาสตร์ อปท.</span>
+                                <span class="text-emerald-700 font-bold">✓ บรรลุ</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">
+                                เกณฑ์กำหนด: ฐานข้อมูลสนับสนุนต่อการดำเนินการตามยุทธศาสตร์<br>
+                                <strong>ผลงานจริง:</strong> เอกสารทุกรายการจำแนกตาม <strong>๕ ยุทธศาสตร์การพัฒนา อบต.ฝางคำ</strong> ติดตามสถิติได้แบบ Realtime
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 text-right">
+                        <a href="/evaluation" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-blue-950 font-bold rounded-xl text-xs shadow transition">
+                            <span>📋 ดูรายงานสรุปการตรวจประเมินฉบับสมบูรณ์ (พร้อมลงนาม)</span>
+                            <span>➔</span>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- ๗. สถาปัตยกรรมและความปลอดภัย -->
+                <section id="sec-arch" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 print-card space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-xl bg-slate-900 text-white font-bold flex items-center justify-center text-sm">๗</span>
+                        <div>
+                            <h2 class="text-lg font-bold font-prompt text-slate-900">สถาปัตยกรรมและความปลอดภัยของข้อมูล (Security Architecture)</h2>
+                            <p class="text-xs text-slate-500">การจัดเก็บไฟล์บน Google Cloud Storage และการสำรองข้อมูล</p>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-700 leading-relaxed space-y-3">
+                        <div class="p-4 bg-slate-900 text-white rounded-2xl font-mono text-[11px] leading-relaxed">
+                            <span class="text-yellow-400 font-bold">// โครงสร้างการเชื่อมต่อข้อมูล (Data Architecture):</span><br>
+                            [ผู้ใช้งาน / เจ้าหน้าที่ 54 ท่าน]<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;➔ [Web Application (Node.js & Tailwind CSS)]<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;➔ [Role-Based Access Control (RBAC Authentication)]<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;➔ [Google Apps Script Bridge API]<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;➔ [Google Cloud Storage Workspace (5 TB Storage)]<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── [คลังกลาง อบต.ฝางคำ / ปีงบประมาณ / สังกัดกอง / เอกสาร]
+                        </div>
+                        <ul class="list-disc list-inside space-y-1.5 text-slate-600 pl-1">
+                            <li><strong>การเข้ารหัสข้อมูล:</strong> ข้อมูลระหว่างรับ-ส่งได้รับการเข้ารหัสด้วยมาตรฐาน HTTPS / SSL 256-bit</li>
+                            <li><strong>การแยกโฟลเดอร์อัตโนมัติ:</strong> เอกสารที่อัปโหลดจะถูกจำแนกเข้าโฟลเดอร์ตามสังกัดกองและปีงบประมาณบน Google Drive โดยอัตโนมัติ</li>
+                            <li><strong>การสำรองข้อมูล (Backup):</strong> ฐานข้อมูล Metadata ถูกสำรองในรูปแบบ JSON Database แบบเรียลไทม์ และไฟล์เอกสารถูกจัดเก็บบน Google Drive Cloud ป้องกันข้อมูลสูญหาย 100%</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- ๘. คำถามที่พบบ่อย (FAQ) -->
+                <section id="sec-faq" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 print-card space-y-4">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm">๘</span>
+                        <div>
+                            <h2 class="text-lg font-bold font-prompt text-slate-900">คำถามที่พบบ่อย (Frequently Asked Questions - FAQ)</h2>
+                            <p class="text-xs text-slate-500">ตอบข้อสงสัยทั่วไปในการใช้งานระบบประจำวัน</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 text-xs text-slate-700">
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                            <div class="font-bold text-slate-900 mb-1">Q: ลืมรหัสผ่าน ต้องทำอย่างไร?</div>
+                            <div class="text-slate-600">A: สามารถแจ้งผู้ดูแลระบบ (Admin - ปลัด อบต.) เพื่อให้กดปุ่ม <code>[🔑 รีเซ็ต]</code> ในหน้าจัดการบุคลากร รหัสผ่านจะกลับเป็นค่าตั้งต้น <code>Fk@123456</code> แล้วท่านจึงเข้าสู่ระบบไปเปลี่ยนรหัสผ่านใหม่ได้ทันที</div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                            <div class="font-bold text-slate-900 mb-1">Q: รองรับไฟล์ขนาดใหญ่สูงสุดเท่าใด และประเภทไฟล์ใดบ้าง?</div>
+                            <div class="text-slate-600">A: เนื่องจากปลายทางคือ Google Drive คลังกลาง 5 TB ระบบจึงรองรับไฟล์เอกสารทุกชนิด (PDF, Word, Excel, PowerPoint, รูปภาพ, วิดีโอสั้น) รองรับไฟล์ขนาดใหญ่ได้สูงสุดถึง 100 MB ต่อครั้ง</div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                            <div class="font-bold text-slate-900 mb-1">Q: หากสังกัดกองหรือตำแหน่งเปลี่ยนไป ต้องแจ้งใครแก้ไข?</div>
+                            <div class="text-slate-600">A: สามารถแจ้งผู้ดูแลระบบเพื่อปรับปรุงกองหรือตำแหน่งในระบบได้ทันทีที่หน้า <code>/admin/users</code> โดยประวัติเอกสารเดิมที่เคยส่งไว้จะไม่สูญหาย</div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                            <div class="font-bold text-slate-900 mb-1">Q: ใครบ้างที่สามารถลบเอกสารออกจากระบบได้?</div>
+                            <div class="text-slate-600">A: สมาชิกทั่วไปสามารถลบได้เฉพาะเอกสารที่ตนเองเป็นผู้ส่ง ส่วนผู้ดูแลระบบ (Admin) สามารถลบหรือปรับปรุงเอกสารของทุกกองงานได้เพื่อการบริหารจัดการข้อมูลที่ถูกต้อง</div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+        </div>
+
     </div>
     `;
 }
