@@ -26,7 +26,7 @@ function saveDriveConfig() {
 
 // ฐานข้อมูลพนักงาน อบต.ฝางคำ ทั้ง 48 ท่าน
 const staffDatabase = [
-    // นักบริหารท้องถิ่น
+    // นักบริหารท้องถิ่น (Admin)
     { name: "นายชาญชัย อักโข", phone: "0874567858", username: "0874567858", position: "ปลัดองค์การบริหารส่วนตำบลฝางคำ", type: "ข้าราชการ", dept: "นักบริหารท้องถิ่น", role: "admin" },
     { name: "รองปลัดองค์การบริหารส่วนตำบลฝางคำ", phone: "0622825588", username: "0622825588", position: "รองปลัดองค์การบริหารส่วนตำบลฝางคำ", type: "ข้าราชการ", dept: "นักบริหารท้องถิ่น", role: "admin" },
 
@@ -184,8 +184,13 @@ const server = http.createServer(async (req, res) => {
         return res.end();
     }
 
-    // 4. บันทึกการตั้งค่า Google Drive
+    // 4. บันทึกการตั้งค่าระบบ (ล็อคสิทธิ์ให้เฉพาะ Admin เท่านั้น!)
     if (url.pathname === '/api/save-drive-config' && req.method === 'POST') {
+        if (currentUser.role !== 'admin') {
+            res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+            return res.end('<h3>❌ ไม่อนุญาต: สิทธิ์การตั้งค่าระบบสงวนไว้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น</h3>');
+        }
+
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', () => {
@@ -347,11 +352,11 @@ function renderLoginPage(hasError) {
 
             <div class="mt-6 pt-5 border-t border-slate-200">
                 <p class="text-xs font-bold text-slate-600 mb-2.5 flex items-center">
-                    <span class="mr-1">⚡</span> ปุ่มทางลัดสำหรับทดสอบสิทธิ์ (คลิกเพื่อเข้าใช้งานได้ทันที):
+                    <span class="mr-1">⚡</span> ทางลัดทดสอบเข้าใช้งานด่วน:
                 </p>
                 <div class="grid grid-cols-2 gap-2 text-xs">
                     <button onclick="fillLogin('0874567858', 'Fk@123456')" class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-xl text-left border border-blue-200 transition font-medium">
-                        👑 ปลัด อบต.<br><span class="text-[10px] text-slate-500">(ดูได้ทุกกอง)</span>
+                        👑 Admin (ปลัด อบต.)<br><span class="text-[10px] text-slate-500">(สิทธิ์ดูแลระบบ)</span>
                     </button>
                     <button onclick="fillLogin('0619236333', 'Fk@123456')" class="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded-xl text-left border border-emerald-200 transition font-medium">
                         💰 ผอ.กองคลัง<br><span class="text-[10px] text-slate-500">(ดูทั้งกองคลัง)</span>
@@ -388,6 +393,8 @@ function renderDashboardPage(currentUser, url) {
         visibleDocs = documentsDatabase.filter(d => d.userName === currentUser.name);
     }
 
+    const isAdmin = currentUser.role === 'admin';
+
     return `
     <!DOCTYPE html>
     <html lang="th">
@@ -420,9 +427,11 @@ function renderDashboardPage(currentUser, url) {
                         <div class="text-xs text-yellow-300 font-medium">${currentUser.position} • ${currentUser.dept}</div>
                     </div>
                     
+                    ${isAdmin ? `
                     <button onclick="document.getElementById('driveModal').classList.remove('hidden')" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-blue-950 font-bold rounded-xl text-xs transition shadow flex items-center space-x-1">
-                        <span>⚙️ ตั้งค่าคลังกลาง</span>
+                        <span>⚙️ ตั้งค่าคลังกลาง (Admin)</span>
                     </button>
+                    ` : ''}
 
                     <a href="/logout" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-xl transition shadow font-medium">
                         ออกจากระบบ
@@ -457,7 +466,7 @@ function renderDashboardPage(currentUser, url) {
                     <div>
                         <div class="text-xs text-slate-400">ระดับสิทธิ์ของท่าน</div>
                         <div class="font-bold text-purple-900 text-sm">
-                            ${currentUser.role === 'admin' ? 'ผู้บริหาร (ดูได้ทุกกอง)' :
+                            ${currentUser.role === 'admin' ? '👑 ผู้บริหาร (Admin เต็มสิทธิ์)' :
                               currentUser.role === 'head' ? 'ผอ.กอง (ดูได้ทั้งกอง)' :
                               currentUser.role === 'auditor' ? 'ผู้ตรวจสอบภายใน' : 'เจ้าหน้าที่ (งานตนเอง)'}
                         </div>
@@ -602,13 +611,14 @@ function renderDashboardPage(currentUser, url) {
             </div>
         </main>
 
-        <!-- Modal ตั้งค่าคลังกลาง อบต.ฝางคำ -->
+        <!-- Modal ตั้งค่าคลังกลาง อบต.ฝางคำ (เฉพาะ Admin เท่านั้นที่เห็นและเข้าถึงได้) -->
+        ${isAdmin ? `
         <div id="driveModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 border border-slate-200">
                 <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
                     <div>
                         <h3 class="font-bold text-slate-800 text-base flex items-center">
-                            <span class="mr-2 text-xl">🏛️</span> ตั้งค่าคลังกลาง อบต.ฝางคำ
+                            <span class="mr-2 text-xl">🏛️</span> ตั้งค่าคลังกลาง อบต.ฝางคำ (เฉพาะ Admin)
                         </h3>
                         <p class="text-xs text-slate-500">ปลายทางจัดเก็บ Google Drive: <strong class="text-blue-900">${driveConfig.targetEmail}</strong></p>
                     </div>
@@ -636,6 +646,7 @@ function renderDashboardPage(currentUser, url) {
                 </form>
             </div>
         </div>
+        ` : ''}
 
         <script>
             async function handleRealUpload(e) {
@@ -704,6 +715,7 @@ function renderDashboardPage(currentUser, url) {
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`=======================================================`);
     console.log(` ระบบจัดเก็บเอกสาร อบต.ฝางคำ (ปลายทาง: คลังกลาง อบต.ฝางคำ)`);
+    console.log(` สิทธิ์การตั้งค่าระบบ: ล็อคให้เฉพาะ Admin เท่านั้น`);
     console.log(` เปิดหน้าเว็บได้ที่: http://localhost:${PORT}/login`);
     console.log(`=======================================================`);
 });
