@@ -188,6 +188,15 @@ function saveKm() {
     fs.writeFileSync(KM_FILE, JSON.stringify(kmDatabase, null, 2), 'utf8');
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 function getCookie(req, name) {
     const list = {};
@@ -475,6 +484,8 @@ function renderAppShell(currentUser, activeTab, contentHtml, notification = null
                                 ปีงบประมาณ <span class="text-red-500">*</span>
                             </label>
                             <select id="editDocFiscalYear" name="fiscalYear" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                                <option value="2570">ปีงบประมาณ 2570</option>
+                                <option value="2569">ปีงบประมาณ 2569</option>
                                 <option value="2568">ปีงบประมาณ 2568</option>
                                 <option value="2567">ปีงบประมาณ 2567</option>
                                 <option value="2566">ปีงบประมาณ 2566</option>
@@ -904,6 +915,134 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // 6.7 Action: บันทึก/ลงความรู้ KM ใหม่ (เจ้าหน้าที่ทุกคนของ อบต.ฝางคำ)
+    if (url.pathname === '/api/km/create' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const title = params.get('title')?.trim();
+            const category = params.get('category')?.trim() || 'วิธีปฏิบัติที่เป็นเลิศ (Best Practice)';
+            const customCategory = params.get('customCategory')?.trim();
+            const finalCategory = (category === 'other' && customCategory) ? customCategory : category;
+            const dept = params.get('dept')?.trim() || currentUser.dept;
+            const author = params.get('author')?.trim() || `${currentUser.name} (${currentUser.position})`;
+            const fiscalYear = params.get('fiscalYear')?.trim() || '2568';
+            const description = params.get('description')?.trim() || '';
+            const driveLink = params.get('driveLink')?.trim() || 'https://drive.google.com';
+
+            if (!title || !description) {
+                res.writeHead(302, { Location: '/km?error=missing_fields' });
+                return res.end();
+            }
+
+            const maxId = kmDatabase.reduce((max, k) => Math.max(max, k.id || 0), 0);
+            const newId = maxId + 1;
+            const code = `KM-${String(newId).padStart(2, '0')}`;
+
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear() + 543;
+            const dateStr = `${day}/${month}/${year}`;
+
+            const newKm = {
+                id: newId,
+                code: code,
+                title: title,
+                category: finalCategory,
+                dept: dept,
+                author: author,
+                description: description,
+                fiscalYear: fiscalYear,
+                downloads: 1,
+                date: dateStr,
+                driveLink: driveLink
+            };
+
+            kmDatabase.unshift(newKm);
+            saveKm();
+
+            res.writeHead(302, { Location: '/km?created=1' });
+            return res.end();
+        });
+        return;
+    }
+
+    // 6.8 Action: แก้ไขข้อมูลองค์ความรู้ KM (Admin หรือผู้จัดทำ)
+    if (url.pathname === '/api/km/update' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const id = parseInt(params.get('id') || '0', 10);
+            const item = kmDatabase.find(k => k.id === id);
+
+            if (!item) {
+                res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end('<h3>❌ ไม่พบองค์ความรู้ที่ต้องการแก้ไข</h3>');
+            }
+
+            const canEdit = currentUser.role === 'admin' || (item.author && item.author.includes(currentUser.name));
+            if (!canEdit) {
+                res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end('<h3>❌ ไม่อนุญาต: ท่านไม่มีสิทธิ์แก้ไของค์ความรู้นี้</h3>');
+            }
+
+            const title = params.get('title')?.trim();
+            const category = params.get('category')?.trim();
+            const dept = params.get('dept')?.trim();
+            const author = params.get('author')?.trim();
+            const fiscalYear = params.get('fiscalYear')?.trim();
+            const description = params.get('description')?.trim();
+            const driveLink = params.get('driveLink')?.trim();
+
+            if (title) item.title = title;
+            if (category) item.category = category;
+            if (dept) item.dept = dept;
+            if (author) item.author = author;
+            if (fiscalYear) item.fiscalYear = fiscalYear;
+            if (description) item.description = description;
+            if (driveLink) item.driveLink = driveLink;
+
+            saveKm();
+
+            res.writeHead(302, { Location: '/km?updated=1' });
+            return res.end();
+        });
+        return;
+    }
+
+    // 6.9 Action: ลบองค์ความรู้ KM (Admin หรือผู้จัดทำ)
+    if (url.pathname === '/api/km/delete' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            const params = new URLSearchParams(body);
+            const id = parseInt(params.get('id') || '0', 10);
+            const index = kmDatabase.findIndex(k => k.id === id);
+
+            if (index === -1) {
+                res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end('<h3>❌ ไม่พบองค์ความรู้ที่ต้องการลบ</h3>');
+            }
+
+            const item = kmDatabase[index];
+            const canDelete = currentUser.role === 'admin' || (item.author && item.author.includes(currentUser.name));
+            if (!canDelete) {
+                res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end('<h3>❌ ไม่อนุญาต: ท่านไม่มีสิทธิ์ลบองค์ความรู้นี้</h3>');
+            }
+
+            kmDatabase.splice(index, 1);
+            saveKm();
+
+            res.writeHead(302, { Location: '/km?deleted=1' });
+            return res.end();
+        });
+        return;
+    }
+
     // 7. Action: อัปโหลดเอกสารจริงเข้า Google Drive
     if (url.pathname === '/api/upload-real' && req.method === 'POST') {
         let body = '';
@@ -1005,8 +1144,19 @@ const server = http.createServer(async (req, res) => {
 
     // 10. แสดงหน้าคลังความรู้ KM (GET /km)
     if (url.pathname === '/km') {
+        let notification = null;
+        if (url.searchParams.get('created')) {
+            notification = { type: 'success', message: 'ลงบันทึกและเผยแพร่องค์ความรู้ KM เรียบร้อยแล้ว' };
+        } else if (url.searchParams.get('updated')) {
+            notification = { type: 'success', message: 'บันทึกการแก้ไของค์ความรู้ KM เรียบร้อยแล้ว' };
+        } else if (url.searchParams.get('deleted')) {
+            notification = { type: 'success', message: 'ลบองค์ความรู้ KM ออกจากระบบเรียบร้อยแล้ว' };
+        } else if (url.searchParams.get('error') === 'missing_fields') {
+            notification = { type: 'error', message: 'กรุณากรอกหัวข้อและรายละเอียดองค์ความรู้ให้ครบถ้วน' };
+        }
+
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        return res.end(renderAppShell(currentUser, 'km', renderKmPage(currentUser, url)));
+        return res.end(renderAppShell(currentUser, 'km', renderKmPage(currentUser, url), notification));
     }
 
     // 10.1 แสดงหน้า Documentation / คู่มือระบบ (GET /docs หรือ /doc)
@@ -1181,7 +1331,9 @@ function renderDashboardPage(currentUser) {
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             ปีงบประมาณ <span class="text-red-500">*</span>
                         </label>
-                        <select id="docFiscalYear" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                        <select id="docFiscalYear" onchange="const el = document.getElementById('targetYearDisplay'); if (el) el.innerText = this.value;" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-medium">
+                            <option value="2570">ปีงบประมาณ 2570</option>
+                            <option value="2569">ปีงบประมาณ 2569</option>
                             <option value="2568" selected>ปีงบประมาณ 2568</option>
                             <option value="2567">ปีงบประมาณ 2567</option>
                             <option value="2566">ปีงบประมาณ 2566</option>
@@ -1208,7 +1360,7 @@ function renderDashboardPage(currentUser) {
                 <div class="mt-4 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs text-slate-600">
                     <div class="font-bold text-blue-950 mb-1">📁 โฟลเดอร์ปลายทางอัตโนมัติ:</div>
                     <div class="text-[11px] text-slate-500 leading-relaxed">
-                        คลังกลาง ➔ <span class="font-bold text-blue-900">${currentUser.dept}</span> ➔ ปีงบประมาณ 2568
+                        คลังกลาง ➔ <span class="font-bold text-blue-900">${currentUser.dept}</span> ➔ ปีงบประมาณ <span id="targetYearDisplay" class="font-bold text-indigo-700">2568</span>
                     </div>
                 </div>
             </div>
@@ -1442,6 +1594,8 @@ function renderDocumentsArchivePage(currentUser, url) {
                     <label class="block text-xs font-bold text-slate-700 mb-1">ปีงบประมาณ</label>
                     <select id="realtimeYearSelect" onchange="filterDocumentsRealtime()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
                         <option value="">-- ทุกปีงบประมาณ --</option>
+                        <option value="2570" ${yearFilter === '2570' ? 'selected' : ''}>ปีงบประมาณ 2570</option>
+                        <option value="2569" ${yearFilter === '2569' ? 'selected' : ''}>ปีงบประมาณ 2569</option>
                         <option value="2568" ${yearFilter === '2568' ? 'selected' : ''}>ปีงบประมาณ 2568</option>
                         <option value="2567" ${yearFilter === '2567' ? 'selected' : ''}>ปีงบประมาณ 2567</option>
                         <option value="2566" ${yearFilter === '2566' ? 'selected' : ''}>ปีงบประมาณ 2566</option>
@@ -1692,29 +1846,37 @@ function renderDocumentsArchivePage(currentUser, url) {
 // -------------------------------------------------------------
 function renderKmPage(currentUser, url) {
     const categoryFilter = url.searchParams.get('category') || '';
+    const yearFilter = url.searchParams.get('year') || '';
     const search = url.searchParams.get('search')?.toLowerCase() || '';
 
     let items = [...kmDatabase];
     if (categoryFilter) {
         items = items.filter(k => k.category === categoryFilter);
     }
+    if (yearFilter) {
+        items = items.filter(k => (k.fiscalYear || '2568') === yearFilter);
+    }
     if (search) {
         items = items.filter(k => 
-            k.title.toLowerCase().includes(search) || 
-            k.description.toLowerCase().includes(search) || 
-            k.dept.toLowerCase().includes(search) ||
-            k.code.toLowerCase().includes(search)
+            (k.title || '').toLowerCase().includes(search) || 
+            (k.description || '').toLowerCase().includes(search) || 
+            (k.dept || '').toLowerCase().includes(search) ||
+            (k.author || '').toLowerCase().includes(search) ||
+            (k.fiscalYear || '').includes(search) ||
+            (k.code || '').toLowerCase().includes(search)
         );
     }
 
-    const categories = [...new Set(kmDatabase.map(k => k.category))];
+    const categories = [...new Set(kmDatabase.map(k => k.category))].filter(Boolean);
+    const fiscalYears = ['2570', '2569', '2568', '2567', '2566'];
+    const isAdmin = currentUser.role === 'admin';
 
     return `
     <div class="space-y-6">
         <!-- KM Header Banner -->
         <div class="p-6 bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 rounded-3xl text-white shadow-md border-b-4 border-yellow-400">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div class="max-w-3xl">
                     <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-yellow-400 text-blue-950 text-xs font-black uppercase mb-2">
                         <span>✓ เกณฑ์ประเมินข้อ ๓</span>
                         <span>•</span>
@@ -1723,48 +1885,81 @@ function renderKmPage(currentUser, url) {
                     <h1 class="text-xl sm:text-2xl font-bold font-prompt text-white">
                         คลังความรู้และแลกเปลี่ยนเรียนรู้วิธีปฏิบัติที่ดี (KM)
                     </h1>
-                    <p class="text-xs sm:text-sm text-blue-200 mt-1 max-w-2xl leading-relaxed">
-                        แหล่งรวบรวมคู่มือการปฏิบัติงานมาตรฐาน (SOP), วิธีปฏิบัติที่เป็นเลิศ (Best Practices) และแบบฟอร์มราชการประจำกองงานทั้ง 6 ส่วนราชการ เพื่อส่งเสริมการถ่ายทอดองค์ความรู้และพัฒนาศักยภาพบุคลากร อบต.ฝางคำ
+                    <p class="text-xs sm:text-sm text-blue-200 mt-1 leading-relaxed">
+                        แหล่งรวบรวมคู่มือการปฏิบัติงานมาตรฐาน (SOP), วิธีปฏิบัติที่เป็นเลิศ (Best Practices) และแบบฟอร์มราชการประจำกองงานทั้ง 7 ส่วนราชการ เพื่อส่งเสริมการถ่ายทอดองค์ความรู้และพัฒนาศักยภาพบุคลากร อบต.ฝางคำ
                     </p>
                 </div>
-                <div class="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 text-center min-w-[150px]">
-                    <div class="text-3xl font-black text-yellow-300 font-prompt">${kmDatabase.length}</div>
-                    <div class="text-[11px] text-blue-100 font-medium">องค์ความรู้ในระบบ</div>
+                <div class="flex flex-wrap items-center gap-3 shrink-0">
+                    <button type="button" onclick="document.getElementById('createKmModal').classList.remove('hidden')"
+                        class="px-5 py-3 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-blue-950 rounded-2xl font-bold font-prompt text-xs sm:text-sm shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 flex items-center space-x-2 cursor-pointer">
+                        <span class="text-base">✍️</span>
+                        <span>ลงความรู้ / เผยแพร่บทเรียนใหม่</span>
+                    </button>
+                    <div class="bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-2xl border border-white/20 text-center min-w-[110px]">
+                        <div class="text-2xl font-black text-yellow-300 font-prompt">${kmDatabase.length}</div>
+                        <div class="text-[11px] text-blue-100 font-medium">องค์ความรู้ในระบบ</div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Filter & Search Bar -->
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 flex flex-wrap justify-between items-center gap-4">
-            <div class="flex flex-wrap gap-2">
-                <a href="/km" class="px-4 py-2 rounded-xl text-xs font-bold transition ${!categoryFilter ? 'bg-blue-900 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
-                    ทั้งหมด (${kmDatabase.length})
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-3">
+                <!-- หมวดหมู่ -->
+                <div class="flex flex-wrap gap-2">
+                    <a href="/km" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${!categoryFilter && !yearFilter ? 'bg-blue-900 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+                        ทั้งหมด (${kmDatabase.length})
+                    </a>
+                    ${categories.map(cat => `
+                        <a href="/km?category=${encodeURIComponent(cat)}${yearFilter ? `&year=${encodeURIComponent(yearFilter)}` : ''}" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${categoryFilter === cat ? 'bg-blue-900 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+                            ${cat} (${kmDatabase.filter(k => k.category === cat).length})
+                        </a>
+                    `).join('')}
+                </div>
+
+                <!-- ค้นหา -->
+                <form method="GET" action="/km" class="flex gap-2 w-full md:w-auto">
+                    ${categoryFilter ? `<input type="hidden" name="category" value="${escapeHtml(categoryFilter)}">` : ''}
+                    ${yearFilter ? `<input type="hidden" name="year" value="${escapeHtml(yearFilter)}">` : ''}
+                    <input type="text" name="search" value="${search}" placeholder="พิมพ์ค้นหาคู่มือ / วิธีปฏิบัติที่ดี..."
+                        class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none w-full md:w-64">
+                    <button type="submit" class="px-4 py-2 bg-blue-900 text-white rounded-xl text-xs font-bold hover:bg-blue-800 transition">
+                        ค้นหา
+                    </button>
+                </form>
+            </div>
+
+            <!-- กรองตามปีงบประมาณ -->
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+                <span class="text-slate-500 font-bold mr-1">กรองปีงบประมาณ:</span>
+                <a href="/km${categoryFilter ? `?category=${encodeURIComponent(categoryFilter)}` : ''}" class="px-2.5 py-1 rounded-lg font-semibold transition ${!yearFilter ? 'bg-amber-500 text-blue-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                    ทุกปี
                 </a>
-                ${categories.map(cat => `
-                    <a href="/km?category=${encodeURIComponent(cat)}" class="px-4 py-2 rounded-xl text-xs font-bold transition ${categoryFilter === cat ? 'bg-blue-900 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
-                        ${cat} (${kmDatabase.filter(k => k.category === cat).length})
+                ${fiscalYears.map(yr => `
+                    <a href="/km?year=${yr}${categoryFilter ? `&category=${encodeURIComponent(categoryFilter)}` : ''}" class="px-2.5 py-1 rounded-lg font-semibold transition ${yearFilter === yr ? 'bg-amber-500 text-blue-950 font-bold shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                        ปี ${yr} (${kmDatabase.filter(k => (k.fiscalYear || '2568') === yr).length})
                     </a>
                 `).join('')}
             </div>
-
-            <form method="GET" action="/km" class="flex gap-2 w-full md:w-auto">
-                <input type="text" name="search" value="${search}" placeholder="พิมพ์ค้นหาคู่มือ / วิธีปฏิบัติที่ดี..."
-                    class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none w-full md:w-64">
-                <button type="submit" class="px-4 py-2 bg-blue-900 text-white rounded-xl text-xs font-bold hover:bg-blue-800 transition">
-                    ค้นหา
-                </button>
-            </form>
         </div>
 
         <!-- KM Grid Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            ${items.map(km => `
+            ${items.map(km => {
+                const canManage = isAdmin || (currentUser.name && km.author && km.author.includes(currentUser.name));
+                return `
                 <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 flex flex-col justify-between hover:shadow-md transition">
                     <div>
-                        <div class="flex justify-between items-start gap-2 mb-3">
-                            <span class="px-2.5 py-1 bg-blue-100 text-blue-900 rounded-lg text-xs font-mono font-bold">
-                                ${km.code}
-                            </span>
+                        <div class="flex flex-wrap justify-between items-start gap-2 mb-3">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="px-2.5 py-1 bg-blue-100 text-blue-900 rounded-lg text-xs font-mono font-bold">
+                                    ${km.code}
+                                </span>
+                                <span class="px-2 py-0.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg text-[10px] font-bold">
+                                    ปีงบฯ ${km.fiscalYear || '2568'}
+                                </span>
+                            </div>
                             <span class="px-2.5 py-1 ${km.category.includes('SOP') ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-amber-50 text-amber-800 border border-amber-200'} rounded-lg text-[11px] font-bold">
                                 ${km.category}
                             </span>
@@ -1785,24 +1980,321 @@ function renderKmPage(currentUser, url) {
                             <div>✍️ ${km.author}</div>
                         </div>
 
-                        <div class="flex items-center justify-between">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
                             <span class="text-[11px] text-slate-400">📥 เข้าศึกษาแล้ว ${km.downloads} ครั้ง</span>
-                            <a href="${km.driveLink}" target="_blank"
-                                class="inline-flex items-center space-x-1.5 px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow transition">
-                                <span>📖 เปิดอ่านคู่มือฉบับเต็ม</span>
-                                <span>↗</span>
-                            </a>
+                            <div class="flex items-center space-x-2">
+                                ${canManage ? `
+                                    <button type="button" onclick="editKmById(${km.id})" class="px-2.5 py-1.5 bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 rounded-xl text-xs font-semibold transition" title="แก้ไข">
+                                        ✏️ แก้ไข
+                                    </button>
+                                    <form method="POST" action="/api/km/delete" class="inline" onsubmit="return confirm('ยืนยันลบองค์ความรู้ \\'${escapeHtml(km.title)}\\' ออกจากระบบ?')">
+                                        <input type="hidden" name="id" value="${km.id}">
+                                        <button type="submit" class="px-2.5 py-1.5 bg-slate-100 hover:bg-rose-100 text-slate-700 hover:text-rose-900 rounded-xl text-xs font-semibold transition" title="ลบ">
+                                            🗑️ ลบ
+                                        </button>
+                                    </form>
+                                ` : ''}
+                                <a href="${km.driveLink || 'https://drive.google.com'}" target="_blank"
+                                    class="inline-flex items-center space-x-1.5 px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow transition">
+                                    <span>📖 เปิดอ่านคู่มือฉบับเต็ม</span>
+                                    <span>↗</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            `).join('')}
+                `;
+            }).join('')}
             ${items.length === 0 ? `
                 <div class="col-span-2 bg-white rounded-3xl p-12 text-center text-slate-400 border border-slate-200">
-                    📭 ไม่พบองค์ความรู้ KM ตามคำค้นหา
+                    📭 ไม่พบองค์ความรู้ KM ตามเงื่อนไขการค้นหา
                 </div>
             ` : ''}
         </div>
+
+        <!-- Modal ลงความรู้ / เพิ่มองค์ความรู้ใหม่ (KM) -->
+        <div id="createKmModal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 my-8">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base sm:text-lg flex items-center font-prompt">
+                            <span class="mr-2 text-xl">✍️</span> ลงความรู้ / เผยแพร่องค์ความรู้ใหม่ (KM)
+                        </h3>
+                        <p class="text-xs text-slate-500">บันทึกคู่มือปฏิบัติงานมาตรฐาน (SOP), วิธีปฏิบัติที่ดี หรือนวัตกรรมท้องถิ่น</p>
+                    </div>
+                    <button type="button" onclick="document.getElementById('createKmModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+                </div>
+
+                <form id="createKmForm" method="POST" action="/api/km/create" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            หัวข้องาน / ชื่องานองค์ความรู้ <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="title" id="kmInputTitle" required placeholder="เช่น คู่มือการจัดทำแผนพัฒนาท้องถิ่น, นวัตกรรมการจัดการขยะชุมชน..."
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                หมวดหมู่ความรู้ <span class="text-red-500">*</span>
+                            </label>
+                            <select name="category" id="createKmCategorySelect" onchange="toggleCustomCategory(this.value, 'create')" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                                <option value="วิธีปฏิบัติที่เป็นเลิศ (Best Practice)">วิธีปฏิบัติที่เป็นเลิศ (Best Practice)</option>
+                                <option value="คู่มือการปฏิบัติงานมาตรฐาน (SOP)">คู่มือการปฏิบัติงานมาตรฐาน (SOP)</option>
+                                <option value="ถอดบทเรียนและนวัตกรรมท้องถิ่น (Local Innovation)">ถอดบทเรียนและนวัตกรรมท้องถิ่น</option>
+                                <option value="แนวปฏิบัติตามระเบียบกฎหมายและมติ ครม.">แนวปฏิบัติตามระเบียบกฎหมายและมติ ครม.</option>
+                                <option value="แบบฟอร์มและแนวทางปฏิบัติงานราชการ">แบบฟอร์มและแนวทางปฏิบัติงานราชการ</option>
+                                <option value="other">+ กำหนดหมวดหมู่อื่นๆ...</option>
+                            </select>
+                            <input type="text" name="customCategory" id="createCustomCategory" placeholder="ระบุชื่อหมวดหมู่ที่ต้องการ..." class="hidden mt-2 w-full px-3 py-2 bg-amber-50 border border-amber-300 rounded-xl text-xs outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                ปีงบประมาณ <span class="text-red-500">*</span>
+                            </label>
+                            <select name="fiscalYear" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-medium">
+                                <option value="2570">ปีงบประมาณ 2570</option>
+                                <option value="2569">ปีงบประมาณ 2569</option>
+                                <option value="2568" selected>ปีงบประมาณ 2568</option>
+                                <option value="2567">ปีงบประมาณ 2567</option>
+                                <option value="2566">ปีงบประมาณ 2566</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                สังกัดส่วนราชการ <span class="text-red-500">*</span>
+                            </label>
+                            <select name="dept" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                                ${['สำนักงานปลัด', 'กองคลัง', 'กองช่าง', 'กองสวัสดิการสังคม', 'กองการศึกษา ศาสนา และวัฒนธรรม', 'หน่วยตรวจสอบภายใน', 'นักบริหารท้องถิ่น'].map(d => `<option value="${d}" ${currentUser.dept === d ? 'selected' : ''}>${d}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                ผู้จัดทำ / ผู้บันทึก <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="author" value="${currentUser.name} (${currentUser.position})" required
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            สาระสำคัญ / สรุปองค์ความรู้และขั้นตอนวิธีปฏิบัติ <span class="text-red-500">*</span>
+                        </label>
+                        <textarea name="description" rows="4" required placeholder="อธิบายสรุปสาระสำคัญของคู่มือ วัตถุประสงค์ ขั้นตอนการทำงาน ปัญหาอุปสรรค และผลลัพธ์ที่เป็นประโยชน์..."
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                        <div class="flex items-center space-x-2 text-xs font-bold text-blue-950">
+                            <span>📎</span>
+                            <span>ไฟล์เอกสารคู่มือ / ลิงก์ฉบับเต็ม</span>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">
+                                เลือกไฟล์เอกสารจริง (PDF, Word, Excel - ส่งตรงเข้า Google Drive 5 TB อัตโนมัติ):
+                            </label>
+                            <input type="file" id="kmCreateFile" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-900 file:text-white cursor-pointer">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">
+                                หรือระบุลิงก์ Google Drive / เว็บไซต์ภายนอก:
+                            </label>
+                            <input type="url" name="driveLink" id="kmCreateDriveLink" value="https://drive.google.com" placeholder="https://drive.google.com/..."
+                                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-mono text-slate-600">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="document.getElementById('createKmModal').classList.add('hidden')" class="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                            ยกเลิก
+                        </button>
+                        <button type="submit" id="btnSubmitKm" class="px-6 py-2.5 bg-gradient-to-r from-blue-900 to-indigo-900 hover:from-blue-800 hover:to-indigo-800 text-white rounded-xl text-xs font-bold shadow-md flex items-center space-x-1.5">
+                            <span>💾</span>
+                            <span>บันทึกและเผยแพร่องค์ความรู้</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal แก้ไขข้อมูลองค์ความรู้ KM -->
+        <div id="editKmModal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 my-8">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base sm:text-lg flex items-center font-prompt">
+                            <span class="mr-2 text-xl">✏️</span> แก้ไขข้อมูลองค์ความรู้ KM
+                        </h3>
+                        <p class="text-xs text-slate-500">ปรับปรุงรายละเอียดคู่มือ สาระสำคัญ หรือลิงก์เอกสาร</p>
+                    </div>
+                    <button type="button" onclick="document.getElementById('editKmModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
+                </div>
+
+                <form method="POST" action="/api/km/update" class="space-y-4">
+                    <input type="hidden" name="id" id="editKmId">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            หัวข้องาน / ชื่องานองค์ความรู้ <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="title" id="editKmTitle" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                หมวดหมู่ความรู้ <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="category" id="editKmCategory" required
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                ปีงบประมาณ <span class="text-red-500">*</span>
+                            </label>
+                            <select name="fiscalYear" id="editKmFiscalYear" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-medium">
+                                <option value="2570">ปีงบประมาณ 2570</option>
+                                <option value="2569">ปีงบประมาณ 2569</option>
+                                <option value="2568">ปีงบประมาณ 2568</option>
+                                <option value="2567">ปีงบประมาณ 2567</option>
+                                <option value="2566">ปีงบประมาณ 2566</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                สังกัดส่วนราชการ <span class="text-red-500">*</span>
+                            </label>
+                            <select name="dept" id="editKmDept" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                                ${['สำนักงานปลัด', 'กองคลัง', 'กองช่าง', 'กองสวัสดิการสังคม', 'กองการศึกษา ศาสนา และวัฒนธรรม', 'หน่วยตรวจสอบภายใน', 'นักบริหารท้องถิ่น'].map(d => `<option value="${d}">${d}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                ผู้จัดทำ / ผู้บันทึก <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="author" id="editKmAuthor" required
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            สาระสำคัญ / สรุปองค์ความรู้และขั้นตอนวิธีปฏิบัติ <span class="text-red-500">*</span>
+                        </label>
+                        <textarea name="description" id="editKmDescription" rows="4" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none leading-relaxed"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            ลิงก์ Google Drive / ไฟล์คู่มือฉบับเต็ม
+                        </label>
+                        <input type="url" name="driveLink" id="editKmDriveLink" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-600 outline-none font-mono text-slate-600">
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                        <button type="button" onclick="document.getElementById('editKmModal').classList.add('hidden')" class="px-4 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                            ยกเลิก
+                        </button>
+                        <button type="submit" class="px-6 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md flex items-center space-x-1.5">
+                            <span>💾</span>
+                            <span>บันทึกการแก้ไข</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
+
+    <script>
+        const ALL_KM_ITEMS = ${JSON.stringify(kmDatabase)};
+
+        function toggleCustomCategory(val, mode) {
+            const customInput = document.getElementById(mode + 'CustomCategory');
+            if (customInput) {
+                if (val === 'other') {
+                    customInput.classList.remove('hidden');
+                    customInput.required = true;
+                    customInput.focus();
+                } else {
+                    customInput.classList.add('hidden');
+                    customInput.required = false;
+                }
+            }
+        }
+
+        function editKmById(id) {
+            const km = ALL_KM_ITEMS.find(k => k.id === id);
+            if (!km) return;
+            document.getElementById('editKmId').value = km.id;
+            document.getElementById('editKmTitle').value = km.title || '';
+            document.getElementById('editKmCategory').value = km.category || '';
+            document.getElementById('editKmFiscalYear').value = km.fiscalYear || '2568';
+            document.getElementById('editKmDept').value = km.dept || '';
+            document.getElementById('editKmAuthor').value = km.author || '';
+            document.getElementById('editKmDescription').value = km.description || '';
+            document.getElementById('editKmDriveLink').value = km.driveLink || 'https://drive.google.com';
+            document.getElementById('editKmModal').classList.remove('hidden');
+        }
+
+        document.getElementById('createKmForm')?.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('kmCreateFile');
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                e.preventDefault();
+                const file = fileInput.files[0];
+                const submitBtn = document.getElementById('btnSubmitKm');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ กำลังอัปโหลดไฟล์คู่มือขึ้น Google Drive...';
+
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async function() {
+                    try {
+                        const base64Content = reader.result.split(',')[1];
+                        const payload = {
+                            title: '[KM] ' + (document.getElementById('kmInputTitle').value || file.name),
+                            fiscalYear: document.querySelector('#createKmForm select[name="fiscalYear"]').value,
+                            department: document.querySelector('#createKmForm select[name="dept"]').value,
+                            fileName: file.name,
+                            fileSize: file.size,
+                            mimeType: file.type || 'application/pdf',
+                            fileBase64: base64Content
+                        };
+
+                        const response = await fetch('/api/upload-real', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const resJson = await response.json();
+                        if (resJson && resJson.fileUrl) {
+                            document.getElementById('kmCreateDriveLink').value = resJson.fileUrl;
+                        }
+                    } catch (err) {
+                        console.warn('Google Drive direct upload skipped:', err);
+                    } finally {
+                        document.getElementById('createKmForm').submit();
+                    }
+                };
+            }
+        });
+    </script>
     `;
 }
 
@@ -2068,7 +2560,7 @@ function renderDocumentationPage(currentUser) {
                                 ๑. ไปที่หน้า <strong>"แดชบอร์ด"</strong> ดูที่กล่องด้านซ้าย <strong>"ส่งผลงาน / เอกสารราชการ"</strong><br>
                                 ๒. กรอก <strong>หัวข้องาน / ชื่องานเอกสาร</strong> เช่น <em>รายงานผลการตรวจรับพัสดุ งวดที่ ๑</em><br>
                                 ๓. เลือก <strong>ยุทธศาสตร์การพัฒนาที่สอดคล้อง</strong> (จาก ๕ ยุทธศาสตร์ของ อบต.ฝางคำ)<br>
-                                ๔. เลือก <strong>ปีงบประมาณ</strong> (เช่น ๒๕๖๘, ๒๕๖๗)<br>
+                                ๔. เลือก <strong>ปีงบประมาณ</strong> (รองรับปีงบประมาณ ๒๕๗๐, ๒๕๖๙, ๒๕๖๘, ๒๕๖๗, ๒๕๖๖)<br>
                                 ๕. คลิกเลือก <strong>ไฟล์เอกสารต้นฉบับจริง</strong> (รองรับ PDF, Word .docx, Excel .xlsx, ภาพถ่าย ฯลฯ)<br>
                                 ๖. กดปุ่ม <strong>"📤 ส่งงานขึ้นคลังกลาง อบต.ฝางคำ"</strong> — เอกสารจะถูกบันทึกส่งตรงเข้า Google Drive และฐานข้อมูลกลางทันที
                             </p>
